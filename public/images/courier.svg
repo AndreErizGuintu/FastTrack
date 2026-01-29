@@ -1,0 +1,26 @@
+<svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="400" height="400" fill="#f8f9fa"/>
+  
+  <!-- Courier figure -->
+  <circle cx="200" cy="100" r="40" fill="#cc1b47"/>
+  
+  <!-- Body -->
+  <rect x="170" y="150" width="60" height="80" fill="#2c3e50" rx="5"/>
+  
+  <!-- Arms -->
+  <rect x="100" y="160" width="70" height="20" fill="#2c3e50" rx="10"/>
+  <rect x="230" y="160" width="70" height="20" fill="#2c3e50" rx="10"/>
+  
+  <!-- Legs -->
+  <rect x="180" y="240" width="15" height="60" fill="#2c3e50"/>
+  <rect x="205" y="240" width="15" height="60" fill="#2c3e50"/>
+  
+  <!-- Package -->
+  <rect x="250" y="155" width="70" height="70" fill="#ff6b35" stroke="#cc1b47" stroke-width="2" rx="3"/>
+  <line x1="250" y1="190" x2="320" y2="190" stroke="#cc1b47" stroke-width="1"/>
+  <line x1="285" y1="155" x2="285" y2="225" stroke="#cc1b47" stroke-width="1"/>
+  
+  <!-- Smile -->
+  <path d="M 195 115 Q 200 120 205 115" stroke="#ffffff" stroke-width="2" fill="none" stroke-linecap="round"/>
+</svg>
