@@ -47,13 +47,9 @@
                             <a href="{{ route('products.edit', $product->id) }}" class="inline-block px-3 py-1 bg-yellow-100 text-yellow-700 rounded hover:bg-yellow-200 transition text-xs font-medium">
                                 <i class="fas fa-edit mr-1"></i> Edit
                             </a>
-                            <form action="{{ route('products.destroy', $product->id) }}" method="POST" class="inline-block" onsubmit="return confirm('Are you sure?');">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 transition text-xs font-medium">
-                                    <i class="fas fa-trash mr-1"></i> Delete
-                                </button>
-                            </form>
+                            <button onclick="openDeleteModal('{{ route('products.destroy', $product->id) }}', '{{ $product->name }}')" class="px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 transition text-xs font-medium">
+                                <i class="fas fa-trash mr-1"></i> Delete
+                            </button>
                         </td>
                     </tr>
                 @endforeach
@@ -65,5 +61,46 @@
 <div class="mt-4">
     {{ $products->links() }}
 </div>
+
+<!-- Delete Confirmation Modal -->
+<div id="deleteModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg shadow-lg p-8 max-w-sm mx-4 animate-in">
+        <div class="flex items-center justify-center mb-4">
+            <div class="bg-red-100 rounded-full p-3">
+                <i class="fas fa-exclamation-triangle text-red-600 text-2xl"></i>
+            </div>
+        </div>
+        <h3 class="text-xl font-bold text-gray-900 text-center mb-2">Delete Product</h3>
+        <p class="text-gray-600 text-center mb-2">Are you sure you want to delete <strong id="deleteItemName"></strong>?</p>
+        <p class="text-gray-500 text-center text-sm mb-6">This action cannot be undone.</p>
+        <div class="flex gap-3">
+            <button onclick="closeDeleteModal()" class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition">
+                Cancel
+            </button>
+            <form id="deleteForm" method="POST" class="flex-1">
+                @csrf
+                @method('DELETE')
+                <button type="submit" class="w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium transition">
+                    Delete
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    const deleteForm = document.getElementById('deleteForm');
+    function openDeleteModal(action, itemName) {
+        deleteForm.action = action;
+        document.getElementById('deleteItemName').textContent = itemName;
+        document.getElementById('deleteModal').classList.remove('hidden');
+    }
+    function closeDeleteModal() {
+        document.getElementById('deleteModal').classList.add('hidden');
+    }
+    document.getElementById('deleteModal')?.addEventListener('click', function(e) {
+        if (e.target === this) closeDeleteModal();
+    });
+</script>
 
 @endsection

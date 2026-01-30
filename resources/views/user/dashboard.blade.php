@@ -21,15 +21,11 @@
                 <div class="flex items-center space-x-6">
                     <div class="hidden md:flex items-center space-x-4">
                         <a href="{{ route('user.dashboard') }}" class="hover:text-red-200 font-medium transition">My Dashboard</a>
-                        <a href="{{ route('home') }}" class="hover:text-red-200 font-medium transition">Home</a>
                     </div>
                     <div class="h-8 w-px bg-red-400/30"></div>
-                    <form action="{{ route('logout') }}" method="POST" class="inline">
-                        @csrf
-                        <button type="submit" class="bg-white text-red-700 hover:bg-red-50 px-5 py-2 rounded-full font-bold transition shadow-md text-sm">
-                            Logout
-                        </button>
-                    </form>
+                    <button onclick="openLogoutModal()" class="bg-white text-red-700 hover:bg-red-50 px-5 py-2 rounded-full font-bold transition shadow-md text-sm">
+                        Logout
+                    </button>
                 </div>
             </div>
         </div>
@@ -106,5 +102,41 @@
     <footer class="mt-20 py-10 text-center text-gray-400 text-sm border-t border-gray-100">
         &copy; 2026 FastTrack Logistics Solutions.
     </footer>
+
+    <!-- Logout Confirmation Modal -->
+    <div id="logoutModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-lg p-8 max-w-sm mx-4 animate-in">
+            <div class="flex items-center justify-center mb-4">
+                <div class="bg-red-100 rounded-full p-3">
+                    <i class="fas fa-sign-out-alt text-red-600 text-2xl"></i>
+                </div>
+            </div>
+            <h3 class="text-xl font-bold text-gray-900 text-center mb-2">Confirm Logout</h3>
+            <p class="text-gray-600 text-center mb-6">Are you sure you want to log out of your account?</p>
+            <div class="flex gap-3">
+                <button onclick="closeLogoutModal()" class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition">
+                    Cancel
+                </button>
+                <form action="{{ route('logout') }}" method="POST" class="flex-1">
+                    @csrf
+                    <button type="submit" class="w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium transition">
+                        Logout
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openLogoutModal() {
+            document.getElementById('logoutModal').classList.remove('hidden');
+        }
+        function closeLogoutModal() {
+            document.getElementById('logoutModal').classList.add('hidden');
+        }
+        document.getElementById('logoutModal')?.addEventListener('click', function(e) {
+            if (e.target === this) closeLogoutModal();
+        });
+    </script>
 </body>
 </html>
