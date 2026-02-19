@@ -134,131 +134,55 @@
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <!-- Main Details -->
             <div class="lg:col-span-2 space-y-6">
-                @if($order->status === 'draft')
-                    <!-- EDIT FORM FOR DRAFT ORDERS -->
-                    <form action="{{ route('user.orders.update', $order) }}" method="POST">
-                        @csrf
-                        @method('PUT')
-                        
-                        <!-- Edit Mode Notice -->
-                        <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg mb-6">
-                            <div class="flex items-center">
-                                <i class="fas fa-edit text-blue-600 mr-3"></i>
-                                <div class="flex-1">
-                                    <p class="text-sm font-bold text-blue-900">Draft Order - Edit Mode</p>
-                                    <p class="text-xs text-blue-700 mt-1">Make changes below and click "Save Changes" to update.</p>
-                                </div>
-                            </div>
+                <!-- Product Information - READ ONLY -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                    <h2 class="text-lg font-bold text-gray-900 mb-4 flex items-center">
+                        <i class="fas fa-box text-red-600 mr-2"></i>Product Information
+                    </h2>
+                    <div class="space-y-3">
+                        <div>
+                            <p class="text-xs text-gray-500 uppercase font-bold mb-1">Description</p>
+                            <p class="text-gray-900">{{ $order->product_description }}</p>
                         </div>
-
-                        <!-- Product Information - EDITABLE -->
-                        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                            <h2 class="text-lg font-bold text-gray-900 mb-4 flex items-center">
-                                <i class="fas fa-box text-red-600 mr-2"></i>Product Information
-                            </h2>
-                            <div class="space-y-3">
-                                <div>
-                                    <label class="block text-xs text-gray-500 uppercase font-bold mb-1">Description *</label>
-                                    <textarea name="product_description" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm" rows="3" required>{{ old('product_description', $order->product_description) }}</textarea>
-                                </div>
-                                <div class="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label class="block text-xs text-gray-500 uppercase font-bold mb-1">Weight (kg) *</label>
-                                        <input type="number" step="0.1" name="estimated_weight" value="{{ old('estimated_weight', $order->estimated_weight) }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm" required>
-                                    </div>
-                                    <div>
-                                        <label class="block text-xs text-gray-500 uppercase font-bold mb-1">Delivery Fee ($)</label>
-                                        <input type="number" step="0.01" name="delivery_fee" value="{{ old('delivery_fee', $order->delivery_fee) }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm">
-                                    </div>
-                                </div>
-                                <div>
-                                    <label class="block text-xs text-gray-500 uppercase font-bold mb-1">Special Notes</label>
-                                    <textarea name="special_notes" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm" rows="2">{{ old('special_notes', $order->special_notes) }}</textarea>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Location Details - EDITABLE -->
-                        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                            <h2 class="text-lg font-bold text-gray-900 mb-4 flex items-center">
-                                <i class="fas fa-map-marker-alt text-red-600 mr-2"></i>Location Details
-                            </h2>
-                            <div class="space-y-4">
-                                <div class="border-l-4 border-emerald-500 pl-4 py-2">
-                                    <label class="block text-xs text-gray-500 uppercase font-bold mb-1">Pickup Address *</label>
-                                    <input type="text" name="pickup_address" value="{{ old('pickup_address', $order->pickup_address) }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 mb-3 focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm" required>
-                                    <label class="block text-xs text-gray-500 uppercase font-bold mb-1">Pickup Phone *</label>
-                                    <input type="tel" name="pickup_contact_phone" value="{{ old('pickup_contact_phone', $order->pickup_contact_phone) }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm" required>
-                                </div>
-                                <div class="border-l-4 border-blue-500 pl-4 py-2">
-                                    <label class="block text-xs text-gray-500 uppercase font-bold mb-1">Delivery Address *</label>
-                                    <input type="text" name="delivery_address" value="{{ old('delivery_address', $order->delivery_address) }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 mb-3 focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm" required>
-                                    <label class="block text-xs text-gray-500 uppercase font-bold mb-1">Delivery Phone *</label>
-                                    <input type="tel" name="delivery_contact_phone" value="{{ old('delivery_contact_phone', $order->delivery_contact_phone) }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm" required>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Save Button -->
-                        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                            <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-lg transition duration-200">
-                                <i class="fas fa-save mr-2"></i>Save Changes
-                            </button>
-                        </div>
-                    </form>
-                @else
-                    <!-- READ-ONLY VIEW FOR NON-DRAFT ORDERS -->
-                    
-                    <!-- Product Information - READ ONLY -->
-                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                        <h2 class="text-lg font-bold text-gray-900 mb-4 flex items-center">
-                            <i class="fas fa-box text-red-600 mr-2"></i>Product Information
-                        </h2>
-                        <div class="space-y-3">
+                        <div class="grid grid-cols-2 gap-4">
                             <div>
-                                <p class="text-xs text-gray-500 uppercase font-bold mb-1">Description</p>
-                                <p class="text-gray-900">{{ $order->product_description }}</p>
+                                <p class="text-xs text-gray-500 uppercase font-bold mb-1">Weight</p>
+                                <p class="text-gray-900 font-semibold">{{ $order->estimated_weight }} kg</p>
                             </div>
-                            <div class="grid grid-cols-2 gap-4">
+                            @if($order->delivery_fee)
                                 <div>
-                                    <p class="text-xs text-gray-500 uppercase font-bold mb-1">Weight</p>
-                                    <p class="text-gray-900 font-semibold">{{ $order->estimated_weight }} kg</p>
-                                </div>
-                                @if($order->delivery_fee)
-                                    <div>
-                                        <p class="text-xs text-gray-500 uppercase font-bold mb-1">Delivery Fee</p>
-                                        <p class="text-gray-900 font-bold text-emerald-600">${{ number_format($order->delivery_fee, 2) }}</p>
-                                    </div>
-                                @endif
-                            </div>
-                            @if($order->special_notes)
-                                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-                                    <p class="text-xs text-yellow-800 uppercase font-bold mb-1">Special Notes</p>
-                                    <p class="text-sm text-yellow-900">{{ $order->special_notes }}</p>
+                                    <p class="text-xs text-gray-500 uppercase font-bold mb-1">Delivery Fee</p>
+                                    <p class="text-gray-900 font-bold text-emerald-600">${{ number_format($order->delivery_fee, 2) }}</p>
                                 </div>
                             @endif
                         </div>
+                        @if($order->special_notes)
+                            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                                <p class="text-xs text-yellow-800 uppercase font-bold mb-1">Special Notes</p>
+                                <p class="text-sm text-yellow-900">{{ $order->special_notes }}</p>
+                            </div>
+                        @endif
                     </div>
+                </div>
 
-                    <!-- Location Details - READ ONLY -->
-                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                        <h2 class="text-lg font-bold text-gray-900 mb-4 flex items-center">
-                            <i class="fas fa-map-marker-alt text-red-600 mr-2"></i>Location Details
-                        </h2>
-                        <div class="space-y-4">
-                            <div class="border-l-4 border-emerald-500 pl-4 py-2">
-                                <p class="text-xs text-gray-500 uppercase font-bold mb-1">Pickup Address</p>
-                                <p class="text-gray-900 mb-2 font-semibold">{{ $order->pickup_address }}</p>
-                                <p class="text-sm text-gray-600"><i class="fas fa-phone mr-1"></i>{{ $order->pickup_contact_phone }}</p>
-                            </div>
-                            <div class="border-l-4 border-blue-500 pl-4 py-2">
-                                <p class="text-xs text-gray-500 uppercase font-bold mb-1">Delivery Address</p>
-                                <p class="text-gray-900 mb-2 font-semibold">{{ $order->delivery_address }}</p>
-                                <p class="text-sm text-gray-600"><i class="fas fa-phone mr-1"></i>{{ $order->delivery_contact_phone }}</p>
-                            </div>
+                <!-- Location Details - READ ONLY -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                    <h2 class="text-lg font-bold text-gray-900 mb-4 flex items-center">
+                        <i class="fas fa-map-marker-alt text-red-600 mr-2"></i>Location Details
+                    </h2>
+                    <div class="space-y-4">
+                        <div class="border-l-4 border-emerald-500 pl-4 py-2">
+                            <p class="text-xs text-gray-500 uppercase font-bold mb-1">Pickup Address</p>
+                            <p class="text-gray-900 mb-2 font-semibold">{{ $order->pickup_address }}</p>
+                            <p class="text-sm text-gray-600"><i class="fas fa-phone mr-1"></i>{{ $order->pickup_contact_phone }}</p>
+                        </div>
+                        <div class="border-l-4 border-blue-500 pl-4 py-2">
+                            <p class="text-xs text-gray-500 uppercase font-bold mb-1">Delivery Address</p>
+                            <p class="text-gray-900 mb-2 font-semibold">{{ $order->delivery_address }}</p>
+                            <p class="text-sm text-gray-600"><i class="fas fa-phone mr-1"></i>{{ $order->delivery_contact_phone }}</p>
                         </div>
                     </div>
-                @endif
+                </div>
 
                 <!-- Status History -->
                 @if($order->statusHistory->isNotEmpty())
