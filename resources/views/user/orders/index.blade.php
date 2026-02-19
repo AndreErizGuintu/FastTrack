@@ -20,9 +20,53 @@
                 
                 <div class="flex items-center space-x-6">
                     <a href="{{ route('user.dashboard') }}" class="hover:text-red-200 font-medium transition">Dashboard</a>
-                    <a href="{{ route('user.orders.create') }}" class="bg-white text-red-700 hover:bg-red-50 px-5 py-2 rounded-full font-bold transition shadow-md text-sm">
+                    <a href="{{ route('user.orders.create') }}" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-bold transition shadow-md text-sm">
                         <i class="fas fa-plus mr-2"></i>New Order
                     </a>
+                    
+                    <!-- Profile Dropdown -->
+                    <div class="relative">
+                        <button onclick="toggleProfileMenu()" class="flex items-center space-x-2 bg-white/10 hover:bg-white/20 px-3 py-2 rounded-full transition">
+                            <div class="w-8 h-8 bg-white text-red-700 rounded-full flex items-center justify-center font-bold text-sm">
+                                {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
+                            </div>
+                            <span class="hidden md:block font-medium">{{ auth()->user()->name }}</span>
+                            <i class="fas fa-chevron-down text-xs"></i>
+                        </button>
+                        
+                        <!-- Profile Dropdown Menu -->
+                        <div id="profileDropdown" class="hidden absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl border border-gray-200 z-50 py-2">
+                            <div class="px-4 py-3 border-b border-gray-100">
+                                <p class="text-sm font-bold text-gray-900">{{ auth()->user()->name }}</p>
+                                <p class="text-xs text-gray-500 truncate">{{ auth()->user()->email }}</p>
+                            </div>
+                            <a href="{{ route('user.profile') }}" class="flex items-center space-x-3 px-4 py-2.5 text-gray-700 hover:bg-gray-50 transition">
+                                <i class="fas fa-user w-5 text-gray-400"></i>
+                                <span class="text-sm font-medium">My Profile</span>
+                            </a>
+                            <a href="{{ route('user.dashboard') }}" class="flex items-center space-x-3 px-4 py-2.5 text-gray-700 hover:bg-gray-50 transition">
+                                <i class="fas fa-home w-5 text-gray-400"></i>
+                                <span class="text-sm font-medium">Dashboard</span>
+                            </a>
+                            <a href="{{ route('user.orders.index') }}" class="flex items-center space-x-3 px-4 py-2.5 text-gray-700 hover:bg-gray-50 transition">
+                                <i class="fas fa-box w-5 text-gray-400"></i>
+                                <span class="text-sm font-medium">My Orders</span>
+                            </a>
+                            <a href="#" class="flex items-center space-x-3 px-4 py-2.5 text-gray-700 hover:bg-gray-50 transition">
+                                <i class="fas fa-cog w-5 text-gray-400"></i>
+                                <span class="text-sm font-medium">Settings</span>
+                            </a>
+                            <div class="border-t border-gray-100 mt-1 pt-1">
+                                <form action="{{ route('logout') }}" method="POST">
+                                    @csrf
+                                    <button type="submit" class="w-full flex items-center space-x-3 px-4 py-2.5 text-red-600 hover:bg-red-50 transition">
+                                        <i class="fas fa-sign-out-alt w-5"></i>
+                                        <span class="text-sm font-medium">Logout</span>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -69,11 +113,23 @@
                             </div>
                             @php
                                 $statusColors = [
-                                    'pending' => 'yellow',
+                                    'draft' => 'gray',
+                                    'awaiting_courier' => 'yellow',
+                                    'courier_assigned' => 'yellow',
                                     'accepted' => 'blue',
+                                    'arriving_at_pickup' => 'purple',
+                                    'at_pickup' => 'purple',
+                                    'picked_up' => 'purple',
                                     'in_transit' => 'purple',
+                                    'arriving_at_dropoff' => 'purple',
+                                    'at_dropoff' => 'purple',
                                     'delivered' => 'emerald',
-                                    'cancelled' => 'red',
+                                    'delivery_failed' => 'orange',
+                                    'returned' => 'orange',
+                                    'cancelled_by_user' => 'red',
+                                    'cancelled_by_courier' => 'red',
+                                    'cancelled_by_system' => 'red',
+                                    'expired' => 'red',
                                 ];
                                 $color = $statusColors[$order->status] ?? 'gray';
                             @endphp
@@ -104,7 +160,16 @@
                                 <i class="fas fa-eye mr-2"></i>View Details
                             </a>
 
-                            @if($order->courier_id && $order->isChatActive())
+                            @if($order->status === 'draft')
+                                <form action="{{ route('user.orders.confirm', $order) }}" method="POST">
+                                    @csrf
+                                    <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2 rounded-lg font-bold transition text-sm">
+                                        <i class="fas fa-check mr-2"></i>Confirm & Post
+                                    </button>
+                                </form>
+                            @endif
+
+                            @if($order->status !== 'draft' && $order->isChatActive())
                                 <a href="{{ route('orders.chat', $order) }}" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg font-bold transition text-sm">
                                     <i class="fas fa-comments mr-2"></i>Chat with Courier
                                 </a>
@@ -162,6 +227,20 @@
         }
         document.getElementById('cancelModal')?.addEventListener('click', function(e) {
             if (e.target === this) closeCancelModal();
+        });
+
+        function toggleProfileMenu() {
+            const dropdown = document.getElementById('profileDropdown');
+            dropdown.classList.toggle('hidden');
+        }
+
+        // Close profile dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            const profileDropdown = document.getElementById('profileDropdown');
+            const profileButton = e.target.closest('button[onclick="toggleProfileMenu()"]');
+            if (!profileDropdown?.contains(e.target) && !profileButton) {
+                profileDropdown?.classList.add('hidden');
+            }
         });
     </script>
 </body>

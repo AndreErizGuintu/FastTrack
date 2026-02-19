@@ -22,10 +22,53 @@
                     <div class="hidden md:flex items-center space-x-4">
                         <a href="{{ route('courier.dashboard') }}" class="hover:text-red-200 font-medium transition">Dashboard</a>
                     </div>
-                    <div class="h-8 w-px bg-red-400/30"></div>
-                    <button onclick="openLogoutModal()" class="bg-white text-red-700 hover:bg-red-50 px-5 py-2 rounded-full font-bold transition shadow-md text-sm">
-                        <i class="fas fa-sign-out-alt mr-2"></i>Logout
-                    </button>
+                    
+                    <!-- Profile Dropdown -->
+                    <div class="relative">
+                        <button onclick="toggleProfileMenu()" class="flex items-center space-x-2 bg-white/10 hover:bg-white/20 px-3 py-2 rounded-full transition">
+                            <div class="w-8 h-8 bg-white text-red-700 rounded-full flex items-center justify-center font-bold text-sm">
+                                {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
+                            </div>
+                            <span class="hidden md:block font-medium">{{ auth()->user()->name }}</span>
+                            <i class="fas fa-chevron-down text-xs"></i>
+                        </button>
+                        
+                        <!-- Profile Dropdown Menu -->
+                        <div id="profileDropdown" class="hidden absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 z-50 py-2">
+                            <div class="px-4 py-3 border-b border-gray-100">
+                                <p class="text-sm font-bold text-gray-900">{{ auth()->user()->name }}</p>
+                                <p class="text-xs text-gray-500 truncate">{{ auth()->user()->email }}</p>
+                                @if($activeOrder)
+                                    <div class="mt-2 bg-blue-50 rounded px-2 py-1.5">
+                                        <p class="text-xs font-semibold text-blue-800">Active Order #{{ $activeOrder->id }}</p>
+                                        <p class="text-xs text-blue-600">{{ ucfirst(str_replace('_', ' ', $activeOrder->status)) }}</p>
+                                    </div>
+                                @else
+                                    <div class="mt-2 bg-emerald-50 rounded px-2 py-1.5">
+                                        <p class="text-xs font-semibold text-emerald-800">{{ $availableOrders->count() }} available orders</p>
+                                    </div>
+                                @endif
+                            </div>
+                            <a href="{{ route('courier.dashboard') }}" class="flex items-center space-x-3 px-4 py-2.5 text-gray-700 hover:bg-gray-50 transition">
+                                <i class="fas fa-home w-5 text-gray-400"></i>
+                                <span class="text-sm font-medium">Dashboard</span>
+                            </a>
+                            <a href="{{ route('courier.profile') }}" class="flex items-center space-x-3 px-4 py-2.5 text-gray-700 hover:bg-gray-50 transition">
+                                <i class="fas fa-user w-5 text-gray-400"></i>
+                                <span class="text-sm font-medium">My Profile</span>
+                            </a>
+                            <a href="#" class="flex items-center space-x-3 px-4 py-2.5 text-gray-700 hover:bg-gray-50 transition">
+                                <i class="fas fa-cog w-5 text-gray-400"></i>
+                                <span class="text-sm font-medium">Settings</span>
+                            </a>
+                            <div class="border-t border-gray-100 mt-1 pt-1">
+                                <button onclick="openLogoutModal()" class="w-full flex items-center space-x-3 px-4 py-2.5 text-red-600 hover:bg-red-50 transition">
+                                    <i class="fas fa-sign-out-alt w-5"></i>
+                                    <span class="text-sm font-medium">Logout</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -104,19 +147,70 @@
                     </div>
                 @endif
 
+                <!-- Delivery Route Map -->
+                @if($activeOrder->courierLocations->isNotEmpty())
+                    <div class="bg-white rounded-xl p-5 shadow-sm mb-6">
+                        <h3 class="text-md font-bold text-gray-900 mb-3 flex items-center">
+                            <i class="fas fa-route text-red-600 mr-2"></i>Your Delivery Route
+                        </h3>
+                        @include('components.order-map', ['order' => $activeOrder])
+                    </div>
+                @endif
+
                 <div class="flex flex-wrap gap-3">
                     @if($activeOrder->status === 'accepted')
+                        <form action="{{ route('courier.arriving_at_pickup', $activeOrder) }}" method="POST" class="inline">
+                            @csrf
+                            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-bold transition shadow-md">
+                                <i class="fas fa-location-arrow mr-2"></i>Start Heading to Pickup
+                            </button>
+                        </form>
+                    @elseif($activeOrder->status === 'arriving_at_pickup')
+                        <form action="{{ route('courier.at_pickup', $activeOrder) }}" method="POST" class="inline">
+                            @csrf
+                            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-bold transition shadow-md">
+                                <i class="fas fa-map-marker-alt mr-2"></i>I'm at Pickup Location
+                            </button>
+                        </form>
+                    @elseif($activeOrder->status === 'at_pickup')
                         <form action="{{ route('courier.pickup', $activeOrder) }}" method="POST" class="inline">
                             @csrf
                             <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-bold transition shadow-md">
                                 <i class="fas fa-box mr-2"></i>Mark as Picked Up
                             </button>
                         </form>
+                    @elseif($activeOrder->status === 'picked_up')
+                        <form action="{{ route('courier.in_transit', $activeOrder) }}" method="POST" class="inline">
+                            @csrf
+                            <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg font-bold transition shadow-md">
+                                <i class="fas fa-truck-moving mr-2"></i>Start Transit
+                            </button>
+                        </form>
                     @elseif($activeOrder->status === 'in_transit')
-                        <form action="{{ route('courier.deliver', $activeOrder) }}" method="POST" class="inline">
+                        <form action="{{ route('courier.arriving_at_dropoff', $activeOrder) }}" method="POST" class="inline">
+                            @csrf
+                            <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg font-bold transition shadow-md">
+                                <i class="fas fa-location-arrow mr-2"></i>Arriving at Dropoff
+                            </button>
+                        </form>
+                    @elseif($activeOrder->status === 'arriving_at_dropoff')
+                        <form action="{{ route('courier.at_dropoff', $activeOrder) }}" method="POST" class="inline">
+                            @csrf
+                            <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg font-bold transition shadow-md">
+                                <i class="fas fa-map-marker-alt mr-2"></i>I'm at Dropoff Location
+                            </button>
+                        </form>
+                    @elseif($activeOrder->status === 'at_dropoff')
+                        <form action="{{ route('courier.deliver', $activeOrder) }}" method="POST" class="inline mr-2">
                             @csrf
                             <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-lg font-bold transition shadow-md">
                                 <i class="fas fa-check-circle mr-2"></i>Mark as Delivered
+                            </button>
+                        </form>
+                        <form action="{{ route('courier.delivery_failed', $activeOrder) }}" method="POST" class="inline">
+                            @csrf
+                            <button type="submit" class="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-bold transition shadow-md">
+                                <i class="fas fa-times-circle mr-2"></i>Delivery Failed
                             </button>
                         </form>
                     @endif
@@ -124,10 +218,11 @@
                     <a href="{{ route('orders.chat', $activeOrder) }}" class="bg-gray-700 hover:bg-gray-800 text-white px-6 py-3 rounded-lg font-bold transition shadow-md">
                         <i class="fas fa-comments mr-2"></i>Chat with Customer
                     </a>
-
-                    <button onclick="openCancelModal({{ $activeOrder->id }})" class="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-bold transition shadow-md">
-                        <i class="fas fa-times-circle mr-2"></i>Cancel Order
-                    </button>
+                    @if($activeOrder->isCancellableByCourier())
+                        <button onclick="openCancelModal({{ $activeOrder->id }})" class="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-bold transition shadow-md">
+                            <i class="fas fa-times-circle mr-2"></i>Cancel Order
+                        </button>
+                    @endif
                 </div>
             </div>
         @else
@@ -153,7 +248,7 @@
                                             <p class="text-xs text-gray-500 uppercase font-bold">Order #{{ $order->id }}</p>
                                             <p class="text-lg font-bold text-gray-900 mt-1">{{ $order->user->name }}</p>
                                         </div>
-                                        <span class="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-xs font-bold uppercase">Pending</span>
+                                        <span class="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-xs font-bold uppercase">Awaiting Courier</span>
                                     </div>
                                     
                                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -300,6 +395,7 @@
     <script>
         function openLogoutModal() {
             document.getElementById('logoutModal').classList.remove('hidden');
+            document.getElementById('profileDropdown')?.classList.add('hidden');
         }
         function closeLogoutModal() {
             document.getElementById('logoutModal').classList.add('hidden');
@@ -318,6 +414,20 @@
         }
         document.getElementById('cancelModal')?.addEventListener('click', function(e) {
             if (e.target === this) closeCancelModal();
+        });
+
+        function toggleProfileMenu() {
+            const dropdown = document.getElementById('profileDropdown');
+            dropdown.classList.toggle('hidden');
+        }
+
+        // Close profile dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            const profileDropdown = document.getElementById('profileDropdown');
+            const profileButton = e.target.closest('button[onclick="toggleProfileMenu()"]');
+            if (!profileDropdown?.contains(e.target) && !profileButton) {
+                profileDropdown?.classList.add('hidden');
+            }
         });
     </script>
 </body>
