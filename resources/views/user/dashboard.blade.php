@@ -328,135 +328,131 @@
 
     <!-- Create Order Modal -->
     <div id="createOrderModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto p-4">
-        <div class="bg-white rounded-xl shadow-lg max-w-6xl w-full my-8">
-            <div class="bg-gradient-to-r from-red-700 to-red-900 text-white px-8 py-5 border-b border-gray-200">
-                <h3 class="text-2xl font-bold flex items-center">
-                    <i class="fas fa-plus-circle mr-3"></i>Create New Delivery Order
-                </h3>
-                <p class="text-red-200 text-sm mt-1">Fill in the details for your delivery request</p>
-            </div>
-            
-            <form action="{{ route('user.orders.store') }}" method="POST" class="p-8">
-                @csrf
-                
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                    <!-- Left Column -->
-                    <div class="space-y-5">
-                        <div>
-                            <label class="block text-sm font-bold text-gray-700 mb-2">Product Description *</label>
-                            <textarea name="product_description" rows="3" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm" placeholder="What needs to be delivered?" required></textarea>
-                        </div>
-
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-sm font-bold text-gray-700 mb-2">Weight (kg) *</label>
-                                <input type="number" step="0.1" name="estimated_weight" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm" placeholder="e.g., 2.5" required>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-bold text-gray-700 mb-2">Fee ($)</label>
-                                <div class="relative">
-                                    <input type="number" step="0.01" id="delivery_fee" name="delivery_fee" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm" placeholder="Auto-calculated" readonly>
-                                    <div id="feeLoader" class="hidden absolute right-3 top-3">
-                                        <i class="fas fa-spinner fa-spin text-gray-400"></i>
-                                    </div>
-                                </div>
-                                <button type="button" onclick="calculateFee()" class="mt-2 text-xs text-blue-600 hover:text-blue-800 font-semibold">
-                                    <i class="fas fa-calculator mr-1"></i>Calculate Fee
-                                </button>
-                            </div>
-                        </div>
-
-                        <div>
-                            <label class="block text-sm font-bold text-gray-700 mb-2">Special Notes</label>
-                            <textarea name="special_notes" rows="3" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm" placeholder="Any special handling instructions..."></textarea>
-                        </div>
-                    </div>
-
-                    <!-- Right Column -->
-                    <div class="space-y-5">
-                        <div class="bg-emerald-50 border-l-4 border-emerald-500 p-4 rounded-r-lg">
-                            <h4 class="font-bold text-emerald-900 text-sm mb-3 flex items-center">
-                                <i class="fas fa-box-open mr-2"></i>Pickup Details
-                            </h4>
-                            <div class="space-y-3">
-                                <div class="relative">
-                                    <label class="block text-xs font-bold text-gray-700 mb-1.5">Pickup Address *</label>
-                                    <input type="text" id="pickup_address" name="pickup_address" oninput="searchAddress(this, 'pickup')" onblur="handleAddressBlur('pickup')" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm" placeholder="Start typing address..." required autocomplete="off">
-                                    <div id="pickup_suggestions" class="hidden absolute z-10 w-full bg-white border border-gray-300 rounded-lg shadow-lg mt-1 max-h-48 overflow-y-auto"></div>
-                                    <p id="pickup_validation" class="text-xs mt-1 hidden"></p>
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-bold text-gray-700 mb-1.5">Pickup Phone *</label>
-                                    <div class="flex gap-2">
-                                        <select id="pickup_country_code" class="border border-gray-300 rounded-lg px-2 py-2 focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm w-28">
-                                            <option value="">Loading...</option>
-                                        </select>
-                                        <input id="pickup_phone_number" type="tel" name="pickup_contact_phone" class="flex-1 border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm" placeholder="912 345 6789" required>
-                                    </div>
-                                    <p id="pickup_phone_hint" class="text-xs mt-1 text-gray-500"></p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg">
-                            <h4 class="font-bold text-blue-900 text-sm mb-3 flex items-center">
-                                <i class="fas fa-map-marker-alt mr-2"></i>Delivery Details
-                            </h4>
-                            <div class="space-y-3">
-                                <div class="relative">
-                                    <label class="block text-xs font-bold text-gray-700 mb-1.5">Delivery Address *</label>
-                                    <input type="text" id="delivery_address" name="delivery_address" oninput="searchAddress(this, 'delivery')" onblur="handleAddressBlur('delivery')" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm" placeholder="Start typing address..." required autocomplete="off">
-                                    <div id="delivery_suggestions" class="hidden absolute z-10 w-full bg-white border border-gray-300 rounded-lg shadow-lg mt-1 max-h-48 overflow-y-auto"></div>
-                                    <p id="delivery_validation" class="text-xs mt-1 hidden"></p>
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-bold text-gray-700 mb-1.5">Delivery Phone *</label>
-                                    <input id="delivery_contact_phone" type="tel" name="delivery_contact_phone" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm" placeholder="e.g. +63 998 765 4321" required>
-                                    <p id="delivery_phone_country" class="text-xs mt-1 text-gray-500">Type number with country code (example: +63)</p>
-                                </input>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Location Map -->
-                <div id="locationMapContainer" class="hidden mb-6 p-5 bg-gray-50 rounded-lg border border-gray-200">
-                    <div class="flex items-center justify-between mb-3">
-                        <h4 class="font-bold text-gray-900 flex items-center">
-                            <i class="fas fa-map-marked-alt text-red-600 mr-2"></i>Pinpoint Exact Locations
-                        </h4>
-                        <p class="text-xs text-gray-600">Drag markers to adjust exact pickup/delivery spots</p>
-                    </div>
-                    <div id="locationMap" style="height: 400px; border-radius: 0.5rem; border: 2px solid #e5e7eb;"></div>
-                    <div class="grid grid-cols-2 gap-4 mt-3 text-xs">
-                        <div class="flex items-center space-x-2">
-                            <span class="w-4 h-4 bg-green-500 rounded-full border-2 border-white shadow"></span>
-                            <span class="text-gray-700"><strong>Green:</strong> Pickup Location (draggable)</span>
-                        </div>
-                        <div class="flex items-center space-x-2">
-                            <span class="w-4 h-4 bg-red-500 rounded-full border-2 border-white shadow"></span>
-                            <span class="text-gray-700"><strong>Red:</strong> Delivery Location (draggable)</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Hidden fields for coordinates -->
-                <input type="hidden" id="pickup_lat" name="pickup_lat">
-                <input type="hidden" id="pickup_lng" name="pickup_lng">
-                <input type="hidden" id="delivery_lat" name="delivery_lat">
-                <input type="hidden" id="delivery_lng" name="delivery_lng">
-
-                <div class="flex gap-3 pt-6 border-t border-gray-200">
-                    <button type="button" onclick="closeCreateOrderModal()" class="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-bold transition">
-                        Cancel
-                    </button>
-                    <button type="submit" class="flex-1 bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-bold transition shadow-md">
-                        <i class="fas fa-check mr-2"></i>Create Order
-                    </button>
-                </div>
-            </form>
-        </div>
+  <div class="bg-white rounded-xl shadow-lg max-w-6xl w-full my-8 max-h-[90vh] overflow-auto">
+    <div class="bg-gradient-to-r from-red-700 to-red-900 text-white px-8 py-5 border-b border-gray-200">
+      <h3 class="text-2xl font-bold flex items-center">
+        <i class="fas fa-plus-circle mr-3"></i>Create New Delivery Order
+      </h3>
+      <p class="text-red-200 text-sm mt-1">Fill in the details for your delivery request</p>
     </div>
+
+    <form action="{{ route('user.orders.store') }}" method="POST" class="p-8">
+      @csrf
+      
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+        <!-- Left 2 columns: All form inputs -->
+        <div class="lg:col-span-2 space-y-5">
+          <div>
+            <label class="block text-sm font-bold text-gray-700 mb-2">Product Description *</label>
+            <textarea name="product_description" rows="3" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm" placeholder="What needs to be delivered?" required></textarea>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-bold text-gray-700 mb-2">Weight (kg) *</label>
+              <input type="number" step="0.1" name="estimated_weight" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm" placeholder="e.g., 2.5" required>
+            </div>
+            <div>
+              <label class="block text-sm font-bold text-gray-700 mb-2">Fee ($)</label>
+              <div class="relative">
+                <input type="number" step="0.01" id="delivery_fee" name="delivery_fee" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm" placeholder="Auto-calculated" readonly>
+                <div id="feeLoader" class="hidden absolute right-3 top-3">
+                  <i class="fas fa-spinner fa-spin text-gray-400"></i>
+                </div>
+              </div>
+              <button type="button" onclick="calculateFee()" class="mt-2 text-xs text-blue-600 hover:text-blue-800 font-semibold">
+                <i class="fas fa-calculator mr-1"></i>Calculate Fee
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-sm font-bold text-gray-700 mb-2">Special Notes</label>
+            <textarea name="special_notes" rows="3" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm" placeholder="Any special handling instructions..."></textarea>
+          </div>
+
+          <div class="bg-emerald-50 border-l-4 border-emerald-500 p-4 rounded-r-lg mb-6">
+            <h4 class="font-bold text-emerald-900 text-sm mb-3 flex items-center">
+              <i class="fas fa-box-open mr-2"></i>Pickup Details
+            </h4>
+            <div class="space-y-3">
+              <div class="relative">
+                <label class="block text-xs font-bold text-gray-700 mb-1.5">Pickup Address *</label>
+                <input type="text" id="pickup_address" name="pickup_address" oninput="searchAddress(this, 'pickup')" onblur="handleAddressBlur('pickup')" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm" placeholder="Start typing address..." required autocomplete="off">
+                <div id="pickup_suggestions" class="hidden absolute z-10 w-full bg-white border border-gray-300 rounded-lg shadow-lg mt-1 max-h-48 overflow-y-auto"></div>
+                <p id="pickup_validation" class="text-xs mt-1 hidden"></p>
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-gray-700 mb-1.5">Pickup Phone *</label>
+                <div class="flex gap-2">
+                  <select id="pickup_country_code" class="border border-gray-300 rounded-lg px-2 py-2 focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm w-28">
+                    <option value="">Loading...</option>
+                  </select>
+                  <input id="pickup_phone_number" type="tel" name="pickup_contact_phone" class="flex-1 border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm" placeholder="912 345 6789" required>
+                </div>
+                <p id="pickup_phone_hint" class="text-xs mt-1 text-gray-500"></p>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg">
+            <h4 class="font-bold text-blue-900 text-sm mb-3 flex items-center">
+              <i class="fas fa-map-marker-alt mr-2"></i>Delivery Details
+            </h4>
+            <div class="space-y-3">
+              <div class="relative">
+                <label class="block text-xs font-bold text-gray-700 mb-1.5">Delivery Address *</label>
+                <input type="text" id="delivery_address" name="delivery_address" oninput="searchAddress(this, 'delivery')" onblur="handleAddressBlur('delivery')" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm" placeholder="Start typing address..." required autocomplete="off">
+                <div id="delivery_suggestions" class="hidden absolute z-10 w-full bg-white border border-gray-300 rounded-lg shadow-lg mt-1 max-h-48 overflow-y-auto"></div>
+                <p id="delivery_validation" class="text-xs mt-1 hidden"></p>
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-gray-700 mb-1.5">Delivery Phone *</label>
+                <input id="delivery_contact_phone" type="tel" name="delivery_contact_phone" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm" placeholder="e.g. +63 998 765 4321" required>
+                <p id="delivery_phone_country" class="text-xs mt-1 text-gray-500">Type number with country code (example: +63)</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right column: Map -->
+        <div id="locationMapContainer" class="bg-gray-50 rounded-lg border border-gray-200 p-5 sticky top-8 h-[420px]">
+          <h4 class="font-bold text-gray-900 flex items-center mb-3">
+            <i class="fas fa-map-marked-alt text-red-600 mr-2"></i>Pinpoint Exact Locations
+          </h4>
+          <p class="text-xs text-gray-600 mb-3">Drag markers to adjust exact pickup/delivery spots</p>
+          <div id="locationMap" style="height: 350px; border-radius: 0.5rem; border: 2px solid #e5e7eb;"></div>
+          <div class="grid grid-cols-2 gap-4 mt-3 text-xs">
+            <div class="flex items-center space-x-2">
+              <span class="w-4 h-4 bg-green-500 rounded-full border-2 border-white shadow"></span>
+              <span class="text-gray-700"><strong>Green:</strong> Pickup Location (draggable)</span>
+            </div>
+            <div class="flex items-center space-x-2">
+              <span class="w-4 h-4 bg-red-500 rounded-full border-2 border-white shadow"></span>
+              <span class="text-gray-700"><strong>Red:</strong> Delivery Location (draggable)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Hidden inputs for coordinates -->
+      <input type="hidden" id="pickup_lat" name="pickup_lat">
+      <input type="hidden" id="pickup_lng" name="pickup_lng">
+      <input type="hidden" id="delivery_lat" name="delivery_lat">
+      <input type="hidden" id="delivery_lng" name="delivery_lng">
+
+      <div class="flex gap-3 pt-6 border-t border-gray-200">
+        <button type="button" onclick="closeCreateOrderModal()" class="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-bold transition">
+          Cancel
+        </button>
+        <button type="submit" class="flex-1 bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-bold transition shadow-md">
+          <i class="fas fa-check mr-2"></i>Create Order
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
 
     <!-- Order Details Modal -->
     <div id="orderModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">

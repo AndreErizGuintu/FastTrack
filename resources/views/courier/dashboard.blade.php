@@ -149,13 +149,16 @@
 
                 <!-- Delivery Route Map -->
                 @if($activeOrder->courierLocations->isNotEmpty())
-                    <div class="bg-white rounded-xl p-5 shadow-sm mb-6">
-                        <h3 class="text-md font-bold text-gray-900 mb-3 flex items-center">
-                            <i class="fas fa-route text-red-600 mr-2"></i>Your Delivery Route
-                        </h3>
-                        @include('components.order-map', ['order' => $activeOrder])
-                    </div>
-                @endif
+    <div class="bg-white rounded-xl p-5 shadow-sm mb-6" style="position: relative; z-index: 1;">
+        <h3 class="text-md font-bold text-gray-900 mb-3 flex items-center">
+            <i class="fas fa-route text-red-600 mr-2"></i>Your Delivery Route
+        </h3>
+        
+        <div style="height: 350px; width: 100%; overflow: hidden; position: relative; border-radius: 8px;">
+            @include('components.order-map', ['order' => $activeOrder])
+        </div>
+    </div>
+@endif
 
                 <div class="flex flex-wrap gap-3">
                     @if($activeOrder->status === 'accepted')
