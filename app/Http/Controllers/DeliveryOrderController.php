@@ -42,8 +42,12 @@ class DeliveryOrderController extends Controller
             'special_notes' => 'nullable|string|max:1000',
             'pickup_address' => 'required|string|max:500',
             'pickup_contact_phone' => 'required|string|max:20',
+            'pickup_lat' => 'nullable|numeric|between:-90,90',
+            'pickup_lng' => 'nullable|numeric|between:-180,180',
             'delivery_address' => 'required|string|max:500',
             'delivery_contact_phone' => 'required|string|max:20',
+            'delivery_lat' => 'nullable|numeric|between:-90,90',
+            'delivery_lng' => 'nullable|numeric|between:-180,180',
             'delivery_fee' => 'nullable|numeric|min:0',
         ]);
 
@@ -71,7 +75,7 @@ class DeliveryOrderController extends Controller
     /**
      * Display specific order details
      */
-    public function show(DeliveryOrder $order)
+    public function show(Request $request, DeliveryOrder $order)
     {
         // Authorization: User can only view their own orders, courier can view assigned orders
         if ($order->user_id !== auth()->id() && $order->courier_id !== auth()->id()) {
@@ -84,6 +88,10 @@ class DeliveryOrderController extends Controller
             'statusHistory.changedBy:id,name',
             'courierLocations',
         ]);
+
+        if ($request->boolean('modal')) {
+            return view('user.orders.partials.modal-details', compact('order'));
+        }
 
         return view('user.orders.show', compact('order'));
     }
@@ -145,8 +153,12 @@ class DeliveryOrderController extends Controller
             'special_notes' => 'nullable|string|max:1000',
             'pickup_address' => 'required|string|max:500',
             'pickup_contact_phone' => 'required|string|max:20',
+            'pickup_lat' => 'nullable|numeric|between:-90,90',
+            'pickup_lng' => 'nullable|numeric|between:-180,180',
             'delivery_address' => 'required|string|max:500',
             'delivery_contact_phone' => 'required|string|max:20',
+            'delivery_lat' => 'nullable|numeric|between:-90,90',
+            'delivery_lng' => 'nullable|numeric|between:-180,180',
             'delivery_fee' => 'nullable|numeric|min:0',
         ]);
 
@@ -179,13 +191,18 @@ class DeliveryOrderController extends Controller
         }
 
         $validated = $request->validate([
-            'cancellation_reason' => 'required|string|max:500',
+            'cancellation_reason' => 'nullable|string|max:500',
         ]);
 
-        DB::transaction(function () use ($order, $validated) {
+        $cancellationReason = trim((string) ($validated['cancellation_reason'] ?? ''));
+        if ($cancellationReason === '') {
+            $cancellationReason = 'Cancelled by user';
+        }
+
+        DB::transaction(function () use ($order, $cancellationReason) {
             try {
                 $oldStatus = $order->status;
-                $order->cancelByUser($validated['cancellation_reason']);
+            $order->cancelByUser($cancellationReason);
 
                 OrderStatusHistory::create([
                     'delivery_order_id' => $order->id,
@@ -193,7 +210,7 @@ class DeliveryOrderController extends Controller
                     'new_status' => 'cancelled_by_user',
                     'changed_by' => auth()->id(),
                     'actor_type' => 'user',
-                    'reason' => $validated['cancellation_reason'],
+                    'reason' => $cancellationReason,
                 ]);
 
                 // If courier was assigned, clear the assignment

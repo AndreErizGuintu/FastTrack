@@ -7,6 +7,7 @@ use App\Models\OrderStatusHistory;
 use App\Services\CourierLocationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class CourierController extends Controller
 {
@@ -348,7 +349,7 @@ class CourierController extends Controller
     /**
      * Mark order as delivered
      */
-    public function deliverOrder(DeliveryOrder $order)
+    public function deliverOrder(Request $request, DeliveryOrder $order)
     {
         // Authorization: Only assigned courier can deliver
         if ($order->courier_id !== auth()->id()) {
@@ -360,8 +361,33 @@ class CourierController extends Controller
             return back()->with('error', 'You must be at the delivery location first.');
         }
 
-        DB::transaction(function () use ($order) {
+        $validated = $request->validate([
+            'proof_of_delivery' => ['nullable', 'file', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+        ]);
+
+        $proofImagePath = null;
+        $proofImageMime = null;
+        $proofImageSize = null;
+
+        if (isset($validated['proof_of_delivery'])) {
+            $proofImage = $validated['proof_of_delivery'];
+            $proofImagePath = $proofImage->store('proof-of-delivery', 'public');
+            $proofImageMime = $proofImage->getMimeType();
+            $proofImageSize = $proofImage->getSize();
+        }
+
+        try {
+            DB::transaction(function () use ($order, $proofImagePath, $proofImageMime, $proofImageSize) {
             try {
+                if ($proofImagePath) {
+                    $order->update([
+                        'pod_image_path' => $proofImagePath,
+                        'pod_image_mime' => $proofImageMime,
+                        'pod_image_size' => $proofImageSize,
+                        'pod_uploaded_at' => now(),
+                    ]);
+                }
+
                 $order->transitionTo('delivered');
 
                 OrderStatusHistory::create([
@@ -382,7 +408,14 @@ class CourierController extends Controller
             } catch (\InvalidArgumentException $e) {
                 throw new \Exception($e->getMessage());
             }
-        });
+            });
+        } catch (\Throwable $exception) {
+            if ($proofImagePath) {
+                Storage::disk('public')->delete($proofImagePath);
+            }
+
+            throw $exception;
+        }
 
         return redirect()->route('courier.dashboard')
             ->with('success', 'Order delivered successfully! Great job!');

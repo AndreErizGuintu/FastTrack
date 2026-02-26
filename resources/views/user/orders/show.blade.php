@@ -101,6 +101,7 @@
             <div class="flex justify-between items-start">
                 <div>
                     <h1 class="text-3xl font-extrabold text-gray-900 mb-2">Order #{{ $order->id }}</h1>
+                    <p class="text-gray-500 text-sm">Tracking ID: {{ $order->tracking_id ?? 'N/A' }}</p>
                     <p class="text-gray-500">Created {{ $order->created_at->format('M d, Y \a\t h:i A') }}</p>
                 </div>
                 @php
@@ -183,6 +184,54 @@
                         </div>
                     </div>
                 </div>
+
+                @if($order->status === 'delivered')
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                        <h2 class="text-lg font-bold text-gray-900 mb-4 flex items-center">
+                            <i class="fas fa-camera text-red-600 mr-2"></i>Proof of Delivery
+                        </h2>
+
+                        @if($order->pod_image_path)
+                            @php
+                                $podImageDataUri = null;
+
+                                if (\Illuminate\Support\Facades\Storage::disk('public')->exists($order->pod_image_path)) {
+                                    $binary = \Illuminate\Support\Facades\Storage::disk('public')->get($order->pod_image_path);
+                                    $mime = $order->pod_image_mime ?: 'image/png';
+                                    $podImageDataUri = 'data:' . $mime . ';base64,' . base64_encode($binary);
+                                }
+                            @endphp
+                            <div class="space-y-3">
+                                @if($podImageDataUri)
+                                    <img
+                                        src="{{ $podImageDataUri }}"
+                                        alt="Proof of Delivery"
+                                        class="w-full max-w-md rounded-lg border border-gray-200"
+                                    >
+                                @else
+                                    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3 max-w-md">
+                                        <p class="text-sm text-yellow-800">
+                                            <i class="fas fa-exclamation-triangle mr-1"></i>Proof image file was not found in storage.
+                                        </p>
+                                    </div>
+                                @endif
+                                <div class="text-sm text-gray-600 space-y-1">
+                                    <p><strong>Uploaded:</strong> {{ optional($order->pod_uploaded_at)->format('M d, Y h:i A') ?? 'N/A' }}</p>
+                                    <p><strong>File type:</strong> {{ $order->pod_image_mime ?? 'N/A' }}</p>
+                                    @if($order->pod_image_size)
+                                        <p><strong>File size:</strong> {{ number_format($order->pod_image_size / 1024, 1) }} KB</p>
+                                    @endif
+                                </div>
+                            </div>
+                        @else
+                            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                                <p class="text-sm text-yellow-800">
+                                    <i class="fas fa-info-circle mr-1"></i>No proof image was uploaded for this delivery.
+                                </p>
+                            </div>
+                        @endif
+                    </div>
+                @endif
 
                 <!-- Status History -->
                 @if($order->statusHistory->isNotEmpty())

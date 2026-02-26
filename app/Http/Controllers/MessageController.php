@@ -12,7 +12,7 @@ class MessageController extends Controller
     /**
      * Display chat for a specific order
      */
-    public function index(DeliveryOrder $order)
+    public function index(Request $request, DeliveryOrder $order)
     {
         // Authorization: Only user and assigned courier can view chat
         if ($order->user_id !== auth()->id() && $order->courier_id !== auth()->id()) {
@@ -30,9 +30,13 @@ class MessageController extends Controller
         Message::forOrder($order->id)
             ->where('sender_id', '!=', auth()->id())
             ->unread()
-            ->each(function ($message) {
+            ->each(function (Message $message) {
                 $message->markAsRead();
             });
+
+        if ($request->boolean('partial')) {
+            return view('user.orders.partials.messages', compact('messages'));
+        }
 
         return view('user.orders.chat', compact('order', 'messages'));
     }

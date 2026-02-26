@@ -78,6 +78,49 @@
                 </a>
             </div>
         </div>
+
+        <div class="bg-white rounded-lg shadow p-6 mt-8">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">Proof of Delivery</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="border border-emerald-200 bg-emerald-50 rounded-lg p-4">
+                    <p class="text-xs uppercase font-bold text-emerald-700 mb-1">Delivered with Proof</p>
+                    <p class="text-2xl font-bold text-emerald-800">{{ $deliveredWithProof ?? 0 }}</p>
+                </div>
+                <div class="border border-yellow-200 bg-yellow-50 rounded-lg p-4">
+                    <p class="text-xs uppercase font-bold text-yellow-700 mb-1">Delivered without Proof</p>
+                    <p class="text-2xl font-bold text-yellow-800">{{ $deliveredWithoutProof ?? 0 }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-6 mt-8">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">Recent Orders</h2>
+            @if(($recentOrders ?? collect())->isEmpty())
+                <p class="text-sm text-gray-500">No recent orders yet.</p>
+            @else
+                <div class="space-y-3">
+                    @foreach($recentOrders as $order)
+                        <div class="border border-gray-200 rounded-lg p-3">
+                            <div class="flex flex-wrap items-center justify-between gap-2">
+                                <div>
+                                    <p class="text-sm font-semibold text-gray-900">Order #{{ $order->id }}</p>
+                                    <p class="text-xs text-gray-500">Tracking ID: {{ $order->tracking_id ?? 'N/A' }}</p>
+                                    <p class="text-xs text-gray-500 mt-1">
+                                        User: {{ $order->user->name ?? 'N/A' }}
+                                        @if($order->courier)
+                                            • Courier: {{ $order->courier->name }}
+                                        @endif
+                                    </p>
+                                </div>
+                                <span class="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-700 uppercase font-semibold">
+                                    {{ str_replace('_', ' ', $order->status) }}
+                                </span>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            @endif
+        </div>
     </div>
 
 @endsection

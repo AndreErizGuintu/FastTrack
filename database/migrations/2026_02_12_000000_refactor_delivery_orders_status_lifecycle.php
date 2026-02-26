@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
@@ -23,25 +24,17 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if ($this->isSqlite()) {
+            $this->migrateStatusDataForward();
+            $this->addOperationalTimestampsForSqlite();
+
+            return;
+        }
+
         // Step 1: Change status column to VARCHAR temporary (to avoid enum constraints during migration)
         DB::statement("ALTER TABLE delivery_orders MODIFY COLUMN status VARCHAR(50) NOT NULL DEFAULT 'awaiting_courier'");
 
-        // Step 2: Migrate data from old statuses to new ones
-        DB::table('delivery_orders')
-            ->where('status', 'pending')
-            ->update(['status' => 'awaiting_courier']);
-
-        // accepted stays as 'accepted' (already maps)
-        
-        // in_transit → picked_up if picked_up_at is set, else stay in_transit
-        DB::statement("UPDATE delivery_orders SET status = 'picked_up' WHERE status = 'in_transit' AND picked_up_at IS NOT NULL");
-
-        // delivered stays as 'delivered' (already maps)
-        
-        // cancelled → cancelled_by_user (conservative assumption)
-        DB::table('delivery_orders')
-            ->where('status', 'cancelled')
-            ->update(['status' => 'cancelled_by_user']);
+        $this->migrateStatusDataForward();
 
         // Step 3: Now change back to ENUM with all new statuses
         DB::statement("ALTER TABLE delivery_orders MODIFY COLUMN status ENUM(
@@ -99,25 +92,17 @@ return new class extends Migration
      */
     public function down(): void
     {
+        if ($this->isSqlite()) {
+            $this->migrateStatusDataBackward();
+            $this->dropOperationalTimestampsForSqlite();
+
+            return;
+        }
+
         // Step 1: Change status back to VARCHAR for data migration
         DB::statement("ALTER TABLE delivery_orders MODIFY COLUMN status VARCHAR(50) NOT NULL DEFAULT 'pending'");
 
-        // Step 2: Rollback data
-        DB::table('delivery_orders')
-            ->where('status', 'awaiting_courier')
-            ->update(['status' => 'pending']);
-
-        DB::table('delivery_orders')
-            ->where('status', 'picked_up')
-            ->update(['status' => 'in_transit']);
-
-        DB::table('delivery_orders')
-            ->whereIn('status', [
-                'cancelled_by_user',
-                'cancelled_by_courier',
-                'cancelled_by_system',
-            ])
-            ->update(['status' => 'cancelled']);
+        $this->migrateStatusDataBackward();
 
         // Step 3: Change back to original enum
         DB::statement("ALTER TABLE delivery_orders MODIFY COLUMN status ENUM(
@@ -136,5 +121,92 @@ return new class extends Migration
         DB::statement("ALTER TABLE delivery_orders DROP COLUMN IF EXISTS delivery_failed_at");
         DB::statement("ALTER TABLE delivery_orders DROP COLUMN IF EXISTS returned_at");
         DB::statement("ALTER TABLE delivery_orders DROP COLUMN IF EXISTS expired_at");
+    }
+
+    private function isSqlite(): bool
+    {
+        return DB::getDriverName() === 'sqlite';
+    }
+
+    private function migrateStatusDataForward(): void
+    {
+        DB::table('delivery_orders')
+            ->where('status', 'pending')
+            ->update(['status' => 'awaiting_courier']);
+
+        DB::statement("UPDATE delivery_orders SET status = 'picked_up' WHERE status = 'in_transit' AND picked_up_at IS NOT NULL");
+
+        DB::table('delivery_orders')
+            ->where('status', 'cancelled')
+            ->update(['status' => 'cancelled_by_user']);
+    }
+
+    private function migrateStatusDataBackward(): void
+    {
+        DB::table('delivery_orders')
+            ->where('status', 'awaiting_courier')
+            ->update(['status' => 'pending']);
+
+        DB::table('delivery_orders')
+            ->where('status', 'picked_up')
+            ->update(['status' => 'in_transit']);
+
+        DB::table('delivery_orders')
+            ->whereIn('status', [
+                'cancelled_by_user',
+                'cancelled_by_courier',
+                'cancelled_by_system',
+            ])
+            ->update(['status' => 'cancelled']);
+    }
+
+    private function addOperationalTimestampsForSqlite(): void
+    {
+        Schema::table('delivery_orders', function (Blueprint $table) {
+            $table->string('status', 50)->default('awaiting_courier')->change();
+        });
+
+        $columns = [
+            'arriving_at_pickup_at',
+            'at_pickup_at',
+            'arriving_at_dropoff_at',
+            'at_dropoff_at',
+            'delivery_failed_at',
+            'returned_at',
+            'expired_at',
+        ];
+
+        foreach ($columns as $column) {
+            if (!Schema::hasColumn('delivery_orders', $column)) {
+                Schema::table('delivery_orders', function ($table) use ($column) {
+                    $table->timestamp($column)->nullable();
+                });
+            }
+        }
+    }
+
+    private function dropOperationalTimestampsForSqlite(): void
+    {
+        Schema::table('delivery_orders', function (Blueprint $table) {
+            $table->string('status', 50)->default('pending')->change();
+        });
+
+        $columns = [
+            'arriving_at_pickup_at',
+            'at_pickup_at',
+            'arriving_at_dropoff_at',
+            'at_dropoff_at',
+            'delivery_failed_at',
+            'returned_at',
+            'expired_at',
+        ];
+
+        foreach ($columns as $column) {
+            if (Schema::hasColumn('delivery_orders', $column)) {
+                Schema::table('delivery_orders', function ($table) use ($column) {
+                    $table->dropColumn($column);
+                });
+            }
+        }
     }
 };

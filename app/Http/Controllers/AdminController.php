@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Models\Product;
+use App\Models\DeliveryOrder;
 use Illuminate\Http\Request;
 
 class AdminController extends Controller
@@ -16,8 +17,25 @@ class AdminController extends Controller
         $totalProducts = Product::count();
         $totalUsers = User::where('role', 'user')->count();
         $totalCouriers = User::where('role', 'courier')->count();
+        $deliveredWithProof = DeliveryOrder::where('status', 'delivered')
+            ->whereNotNull('pod_image_path')
+            ->count();
+        $deliveredWithoutProof = DeliveryOrder::where('status', 'delivered')
+            ->whereNull('pod_image_path')
+            ->count();
+        $recentOrders = DeliveryOrder::with(['user:id,name', 'courier:id,name'])
+            ->latest()
+            ->take(5)
+            ->get();
 
-        return view('admin.dashboard', compact('totalProducts', 'totalUsers', 'totalCouriers'));
+        return view('admin.dashboard', compact(
+            'totalProducts',
+            'totalUsers',
+            'totalCouriers',
+            'deliveredWithProof',
+            'deliveredWithoutProof',
+            'recentOrders'
+        ));
     }
 
     /**

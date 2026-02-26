@@ -90,6 +90,17 @@
             </div>
         @endif
 
+        @if ($errors->any())
+            <div class="bg-red-50 border-l-4 border-red-500 text-red-800 px-4 py-4 rounded-r-lg mb-8 shadow-sm">
+                <p class="font-bold mb-2"><i class="fas fa-exclamation-circle mr-2"></i>Please fix the following errors:</p>
+                <ul class="list-disc list-inside space-y-1">
+                    @foreach ($errors->all() as $error)
+                        <li class="text-sm">{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
         <div class="mb-10">
             <h1 class="text-3xl font-extrabold text-gray-900 mb-2">Welcome back, {{ auth()->user()->name }}</h1>
             <p class="text-gray-500">
@@ -112,6 +123,7 @@
                         <div>
                             <h2 class="text-2xl font-bold text-gray-900">Active Delivery</h2>
                             <p class="text-sm text-gray-600">Order #{{ $activeOrder->id }}</p>
+                            <p class="text-xs text-gray-500 mt-1">Tracking ID: {{ $activeOrder->tracking_id ?? 'N/A' }}</p>
                         </div>
                     </div>
                     <span class="bg-{{ $activeOrder->status === 'accepted' ? 'yellow' : 'blue' }}-600 text-white px-4 py-2 rounded-full text-sm font-bold uppercase">
@@ -147,6 +159,29 @@
                     </div>
                 @endif
 
+                <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
+                    <p class="text-xs text-blue-800 uppercase font-bold mb-1"><i class="fas fa-compass mr-1"></i>Next Step</p>
+                    <p class="text-sm text-blue-900">
+                        @if($activeOrder->status === 'accepted')
+                            Head to pickup location and mark "Arriving at Pickup" when en route.
+                        @elseif($activeOrder->status === 'arriving_at_pickup')
+                            Confirm when you are at the pickup location.
+                        @elseif($activeOrder->status === 'at_pickup')
+                            Collect the package and mark it as picked up.
+                        @elseif($activeOrder->status === 'picked_up')
+                            Start transit to the delivery address.
+                        @elseif($activeOrder->status === 'in_transit')
+                            Mark "Arriving at Dropoff" as you approach the destination.
+                        @elseif($activeOrder->status === 'arriving_at_dropoff')
+                            Confirm when you are at the dropoff location.
+                        @elseif($activeOrder->status === 'at_dropoff')
+                            Upload optional proof image, then mark as delivered.
+                        @else
+                            Continue following the delivery workflow updates.
+                        @endif
+                    </p>
+                </div>
+
                 <!-- Delivery Route Map -->
                 @if($activeOrder->courierLocations->isNotEmpty())
     <div class="bg-white rounded-xl p-5 shadow-sm mb-6" style="position: relative; z-index: 1;">
@@ -160,7 +195,7 @@
     </div>
 @endif
 
-                <div class="flex flex-wrap gap-3">
+                <div class="flex flex-wrap gap-3 items-stretch">
                     @if($activeOrder->status === 'accepted')
                         <form action="{{ route('courier.arriving_at_pickup', $activeOrder) }}" method="POST" class="inline">
                             @csrf
@@ -204,21 +239,32 @@
                             </button>
                         </form>
                     @elseif($activeOrder->status === 'at_dropoff')
-                        <form action="{{ route('courier.deliver', $activeOrder) }}" method="POST" class="inline mr-2">
+                        <form action="{{ route('courier.deliver', $activeOrder) }}" method="POST" enctype="multipart/form-data" class="bg-white rounded-lg border border-gray-200 p-4 w-full md:w-[320px]">
                             @csrf
-                            <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-lg font-bold transition shadow-md">
+                            <div class="mb-3">
+                                <label for="proof_of_delivery" class="block text-xs font-bold text-gray-600 uppercase mb-1">Proof of Delivery Image (Optional)</label>
+                                <input
+                                    id="proof_of_delivery"
+                                    name="proof_of_delivery"
+                                    type="file"
+                                    accept="image/jpeg,image/png,image/webp"
+                                    class="block w-full text-sm text-gray-700 file:mr-3 file:py-2 file:px-3 file:rounded file:border-0 file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"
+                                >
+                                <p class="text-xs text-gray-500 mt-1">Accepted: JPG, PNG, WEBP up to 5MB</p>
+                            </div>
+                            <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-lg font-bold transition shadow-md w-full">
                                 <i class="fas fa-check-circle mr-2"></i>Mark as Delivered
                             </button>
                         </form>
-                        <form action="{{ route('courier.delivery_failed', $activeOrder) }}" method="POST" class="inline">
+                        <form action="{{ route('courier.delivery_failed', $activeOrder) }}" method="POST" class="w-full md:w-[260px]">
                             @csrf
-                            <button type="submit" class="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-bold transition shadow-md">
+                            <button type="submit" class="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-bold transition shadow-md w-full h-full min-h-[48px]">
                                 <i class="fas fa-times-circle mr-2"></i>Delivery Failed
                             </button>
                         </form>
                     @endif
                     
-                    <a href="{{ route('orders.chat', $activeOrder) }}" class="bg-gray-700 hover:bg-gray-800 text-white px-6 py-3 rounded-lg font-bold transition shadow-md">
+                    <a href="{{ route('orders.chat', $activeOrder) }}" class="bg-gray-700 hover:bg-gray-800 text-white px-6 py-3 rounded-lg font-bold transition shadow-md w-full md:w-[260px] min-h-[48px] flex items-center justify-center">
                         <i class="fas fa-comments mr-2"></i>Chat with Customer
                     </a>
                     @if($activeOrder->isCancellableByCourier())
@@ -249,6 +295,7 @@
                                     <div class="flex justify-between items-start mb-4">
                                         <div>
                                             <p class="text-xs text-gray-500 uppercase font-bold">Order #{{ $order->id }}</p>
+                                            <p class="text-xs text-gray-500 mt-1">Tracking ID: {{ $order->tracking_id ?? 'N/A' }}</p>
                                             <p class="text-lg font-bold text-gray-900 mt-1">{{ $order->user->name }}</p>
                                         </div>
                                         <span class="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-xs font-bold uppercase">Awaiting Courier</span>

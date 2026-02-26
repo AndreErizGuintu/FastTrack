@@ -5,7 +5,6 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Support\Facades\Auth;
 
 class DeliveryOrder extends Model
 {
@@ -37,6 +36,10 @@ class DeliveryOrder extends Model
         'returned_at',
         'expired_at',
         'delivered_at',
+        'pod_image_path',
+        'pod_image_mime',
+        'pod_image_size',
+        'pod_uploaded_at',
         'cancelled_at',
         'cancellation_reason',
         'delivery_fee',
@@ -55,6 +58,8 @@ class DeliveryOrder extends Model
         'returned_at' => 'datetime',
         'expired_at' => 'datetime',
         'delivered_at' => 'datetime',
+        'pod_uploaded_at' => 'datetime',
+        'pod_image_size' => 'integer',
         'cancelled_at' => 'datetime',
     ];
 
@@ -198,26 +203,6 @@ class DeliveryOrder extends Model
         'arriving_at_pickup',
         'at_pickup',
     ];
-
-    // ==================== BOOT & EVENTS ====================
-
-    /**
-     * Boot method - Auto-log status changes to order_status_history
-     */
-    protected static function booted()
-    {
-        static::updated(function ($order) {
-            if ($order->isDirty('status')) {
-                OrderStatusHistory::create([
-                    'delivery_order_id' => $order->id,
-                    'old_status' => $order->getOriginal('status'),
-                    'new_status' => $order->status,
-                    'changed_by' => Auth::id() ?? 1,
-                    'actor_type' => 'system', // Will be overridden by controller
-                ]);
-            }
-        });
-    }
 
     // ==================== RELATIONSHIPS ====================
 

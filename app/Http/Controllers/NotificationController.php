@@ -30,7 +30,7 @@ class NotificationController extends Controller
     public function markAllSeen()
     {
         OrderStatusHistory::whereNull('seen_at')
-            ->whereIn('new_status', ['accepted', 'picked_up', 'arriving_at_dropoff', 'cancelled_by_user', 'cancelled_by_courier', 'cancelled_by_system'])
+            ->whereIn('new_status', ['accepted', 'picked_up', 'arriving_at_dropoff', 'delivered', 'cancelled_by_user', 'cancelled_by_courier', 'cancelled_by_system'])
             ->whereHas('deliveryOrder', function($query) {
                 $query->where('user_id', auth()->id());
             })

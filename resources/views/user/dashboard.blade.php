@@ -19,23 +19,6 @@
         .toast-exit { animation: slideOutUp 0.3s ease-out; }
     </style>
 </head>
-@php
-    // Get unread notifications for accepted, picked_up, arriving_at_dropoff, and cancelled statuses
-    $unreadNotifications = \App\Models\OrderStatusHistory::whereNull('seen_at')
-        ->whereIn('new_status', ['accepted', 'picked_up', 'arriving_at_dropoff', 'cancelled_by_user', 'cancelled_by_courier', 'cancelled_by_system'])
-        ->whereHas('deliveryOrder', function($query) {
-            $query->where('user_id', auth()->id());
-        })
-        ->with(['deliveryOrder', 'changedBy'])
-        ->latest()
-        ->get()
-        ->unique(function($item) {
-            return $item->delivery_order_id . '-' . $item->old_status . '-' . $item->new_status;
-        });
-    
-    $unreadCount = $unreadNotifications->count();
-@endphp
-
 <body class="bg-gray-50 min-h-screen font-sans" @if(Session::has('recent_order_id')) data-recent-order-id="{{ Session::get('recent_order_id') }}" @endif>
     <!-- Success Toast -->
     <div id="successToast" class="hidden fixed top-4 left-1/2 transform -translate-x-1/2 bg-green-600 text-white rounded-lg shadow-lg px-6 py-4 flex items-center space-x-3 z-50 max-w-md">
@@ -49,19 +32,19 @@
         </button>
     </div>
 
-    <nav class="bg-gradient-to-r from-red-700 to-red-900 text-white shadow-xl sticky top-0 z-40">
+    <nav class="bg-gradient-to-r from-red-700 to-red-900 text-white shadow-md sticky top-0 z-40">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center h-20">
-                <div class="flex items-center space-x-3">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center space-x-2">
                     <div class="bg-white/20 p-2 rounded-lg backdrop-blur-sm">
-                        <i class="fas fa-box-open text-xl"></i>
+                        <i class="fas fa-box-open text-lg"></i>
                     </div>
-                    <span class="text-xl font-bold tracking-tight">FastTrack <span class="text-red-300">User</span></span>
+                    <span class="text-lg font-bold tracking-tight">FastTrack <span class="text-red-300">User</span></span>
                 </div>
                 
-                <div class="flex items-center space-x-6">
+                <div class="flex items-center space-x-4">
                     <div class="hidden md:flex items-center space-x-4">
-                        <a href="{{ route('user.dashboard') }}" class="hover:text-red-200 font-medium transition">My Dashboard</a>
+                        <a href="{{ route('user.dashboard') }}" class="hover:text-red-200 text-sm font-medium transition">My Dashboard</a>
                     </div>
                     
                     <!-- Notification Bell -->
@@ -96,6 +79,7 @@
                                                 'accepted' => ['icon' => 'fa-check-circle', 'color' => 'blue'],
                                                 'picked_up' => ['icon' => 'fa-box', 'color' => 'purple'],
                                                 'arriving_at_dropoff' => ['icon' => 'fa-location-arrow', 'color' => 'orange'],
+                                                'delivered' => ['icon' => 'fa-check-double', 'color' => 'emerald'],
                                                 'cancelled_by_user' => ['icon' => 'fa-times-circle', 'color' => 'red'],
                                                 'cancelled_by_courier' => ['icon' => 'fa-times-circle', 'color' => 'red'],
                                                 'cancelled_by_system' => ['icon' => 'fa-times-circle', 'color' => 'red'],
@@ -167,9 +151,14 @@
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         
         @if ($message = Session::get('success'))
-            <div class="bg-emerald-50 border-l-4 border-emerald-500 text-emerald-800 px-4 py-4 rounded-r-lg mb-8 shadow-sm flex items-center">
-                <i class="fas fa-check-circle mr-3 text-emerald-500"></i>
-                <span class="font-medium">{{ $message }}</span>
+            <div id="successAlert" class="bg-emerald-50 border border-emerald-200 text-emerald-800 px-4 py-3 rounded-xl mb-6 shadow-sm flex items-center justify-between gap-3">
+                <div class="flex items-center gap-2">
+                    <i class="fas fa-check-circle text-emerald-600"></i>
+                    <span class="text-sm font-medium">{{ $message }}</span>
+                </div>
+                <button type="button" onclick="document.getElementById('successAlert')?.remove()" class="text-emerald-600 hover:text-emerald-700 transition">
+                    <i class="fas fa-times text-xs"></i>
+                </button>
             </div>
         @endif
 
@@ -180,30 +169,30 @@
             </div>
         @endif
 
-        <div class="mb-10">
+        <div class="mb-8">
             <h1 class="text-3xl font-extrabold text-gray-900 mb-2">Hello, {{ auth()->user()->name }}!</h1>
             <p class="text-gray-500">Manage your shipments and account preferences below.</p>
         </div>
 
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-10">
-            <div class="bg-gray-50/50 px-8 py-5 border-b border-gray-100 flex justify-between items-center">
-                <h2 class="text-xl font-bold text-gray-800">Account Details</h2>
-                <button class="text-red-600 hover:text-red-700 text-sm font-bold uppercase tracking-wider transition">Edit Profile</button>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-8">
+            <div class="bg-gray-50 px-6 py-4 border-b border-gray-100 flex justify-between items-center">
+                <h2 class="text-lg font-semibold text-gray-900">Account Details</h2>
+                <button class="text-red-600 hover:text-red-700 text-xs font-semibold uppercase tracking-wide transition">Edit Profile</button>
             </div>
-            <div class="p-8">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                    <div class="flex flex-col">
-                        <span class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Full Name</span>
-                        <span class="text-lg font-semibold text-gray-900">{{ auth()->user()->name }}</span>
+            <div class="p-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <span class="text-xs font-semibold text-gray-400 uppercase tracking-wide">Full Name</span>
+                        <p class="mt-2 text-base font-semibold text-gray-900">{{ auth()->user()->name }}</p>
                     </div>
-                    <div class="flex flex-col">
-                        <span class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Email Address</span>
-                        <span class="text-lg font-semibold text-gray-900">{{ auth()->user()->email }}</span>
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <span class="text-xs font-semibold text-gray-400 uppercase tracking-wide">Email Address</span>
+                        <p class="mt-2 text-base font-semibold text-gray-900 break-words">{{ auth()->user()->email }}</p>
                     </div>
-                    <div class="flex flex-col">
-                        <span class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Account Status</span>
-                        <div>
-                            <span class="px-4 py-1 bg-red-100 text-red-700 rounded-full text-xs font-bold uppercase tracking-tighter">Premium User</span>
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <span class="text-xs font-semibold text-gray-400 uppercase tracking-wide">Account Status</span>
+                        <div class="mt-2">
+                            <span class="inline-flex px-3 py-1 bg-red-100 text-red-700 rounded-full text-xs font-semibold uppercase tracking-wide">Premium User</span>
                         </div>
                     </div>
                 </div>
@@ -211,10 +200,10 @@
         </div>
 
         <!-- Orders Section -->
-        <div class="mb-10">
-            <div class="flex justify-between items-center mb-6">
+        <div class="mb-8">
+            <div class="flex justify-between items-center mb-4">
                 <div>
-                    <h2 class="text-2xl font-bold text-gray-900">Your Deliveries</h2>
+                    <h2 class="text-xl font-semibold text-gray-900">Your Deliveries</h2>
                     <p class="text-gray-500 text-sm mt-1">Create and manage your delivery orders</p>
                 </div>
                 <button onclick="openCreateOrderModal()" class="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-bold transition shadow-md flex items-center">
@@ -223,7 +212,6 @@
             </div>
 
             @php
-                $userOrders = \App\Models\DeliveryOrder::forUser(auth()->id())->latest()->take(10)->get();
                 $statusColors = [
                     'draft' => 'gray',
                     'awaiting_courier' => 'yellow',
@@ -260,34 +248,51 @@
                         @php
                             $color = $statusColors[$order->status] ?? 'gray';
                         @endphp
-                        <div class="bg-white rounded-lg border border-gray-100 p-4 hover:shadow-md hover:border-red-200 transition cursor-pointer group" onclick="openOrderModal({{ $order->id }})">
-                            <div class="flex justify-between items-start">
+                        <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4 hover:shadow-md hover:border-gray-200 transition-all duration-200 cursor-pointer group" onclick="openOrderModal({{ $order->id }})">
+                            <div class="flex justify-between items-start gap-4">
                                 <div class="flex-1">
-                                    <div class="flex items-center space-x-3">
+                                    <div class="flex items-start justify-between gap-4">
                                         <div>
-                                            <p class="text-sm font-bold text-gray-900">Order #{{ $order->id }} - {{ Str::limit($order->product_description, 40) }}</p>
-                                            <p class="text-xs text-gray-500 mt-1">
+                                            <p class="text-sm font-semibold text-gray-900 leading-5">Order #{{ $order->id }}</p>
+                                            <p class="text-xs text-gray-500 mt-1">Tracking ID: {{ $order->tracking_id ?? 'N/A' }}</p>
+                                            <p class="text-sm text-gray-700 mt-1">{{ Str::limit($order->product_description, 48) }}</p>
+                                            <p class="text-xs text-gray-500 mt-2">
                                                 <i class="fas fa-clock mr-1"></i>{{ $order->created_at->diffForHumans() }}
                                                 @if($order->courier)
                                                     <i class="fas fa-user mx-2"></i>{{ $order->courier->name }}
                                                 @endif
                                             </p>
                                         </div>
+                                        <span class="bg-{{ $color }}-100 text-{{ $color }}-800 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wide whitespace-nowrap">
+                                            {{ ucfirst(str_replace('_', ' ', $order->status)) }}
+                                        </span>
                                     </div>
-                                    <div class="flex items-center space-x-2 mt-2 text-xs text-gray-600">
+                                    <div class="flex items-center space-x-2 mt-3 text-xs text-gray-600">
                                         <i class="fas fa-location-dot text-red-600"></i>
                                         <span>{{ Str::limit($order->pickup_address, 30) }}</span>
                                         <i class="fas fa-arrow-right text-gray-400 mx-1"></i>
                                         <i class="fas fa-location-dot text-blue-600"></i>
                                         <span>{{ Str::limit($order->delivery_address, 30) }}</span>
                                     </div>
+                                    <p class="text-xs text-gray-500 mt-2">
+                                        @if($order->status === 'draft')
+                                            Next step: Confirm this draft to post it for couriers.
+                                        @elseif($order->status === 'awaiting_courier')
+                                            Next step: Wait for a courier to accept your order.
+                                        @elseif(in_array($order->status, ['accepted', 'arriving_at_pickup', 'at_pickup', 'picked_up', 'in_transit', 'arriving_at_dropoff', 'at_dropoff']))
+                                            Next step: Track updates and use chat for coordination.
+                                        @elseif($order->status === 'delivered')
+                                            Next step: Review your proof of delivery in order details.
+                                        @elseif(in_array($order->status, ['delivery_failed', 'returned']))
+                                            Next step: Check order details for latest failure notes.
+                                        @elseif(in_array($order->status, ['cancelled_by_user', 'cancelled_by_courier', 'cancelled_by_system', 'expired']))
+                                            Next step: Create a new order if you still need delivery.
+                                        @endif
+                                    </p>
                                 </div>
-                                <div class="flex items-center space-x-3">
-                                    <span class="bg-{{ $color }}-100 text-{{ $color }}-800 px-3 py-1 rounded-full text-xs font-bold uppercase">
-                                        {{ ucfirst(str_replace('_', ' ', $order->status)) }}
-                                    </span>
+                                <div class="flex items-center space-x-2">
                                     @if($order->courier_id && $order->isChatActive())
-                                        <button onclick="openChatWidget({{ $order->id }}); event.stopPropagation();" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-lg text-xs font-bold flex items-center transition">
+                                        <button onclick="openChatWidget({{ $order->id }}); event.stopPropagation();" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center transition">
                                             <i class="fas fa-comments mr-1"></i>Chat
                                         </button>
                                     @endif
@@ -336,7 +341,7 @@
       <p class="text-red-200 text-sm mt-1">Fill in the details for your delivery request</p>
     </div>
 
-    <form action="{{ route('user.orders.store') }}" method="POST" class="p-8">
+    <form id="createOrderForm" action="{{ route('user.orders.store') }}" method="POST" class="p-8">
       @csrf
       
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
@@ -388,9 +393,10 @@
                   <select id="pickup_country_code" class="border border-gray-300 rounded-lg px-2 py-2 focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm w-28">
                     <option value="">Loading...</option>
                   </select>
-                  <input id="pickup_phone_number" type="tel" name="pickup_contact_phone" class="flex-1 border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm" placeholder="912 345 6789" required>
+                                    <input id="pickup_phone_number" type="tel" class="flex-1 border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm" placeholder="912 345 6789" required>
                 </div>
                 <p id="pickup_phone_hint" class="text-xs mt-1 text-gray-500"></p>
+                                <input type="hidden" id="pickup_contact_phone" name="pickup_contact_phone">
               </div>
             </div>
           </div>
@@ -408,8 +414,14 @@
               </div>
               <div>
                 <label class="block text-xs font-bold text-gray-700 mb-1.5">Delivery Phone *</label>
-                <input id="delivery_contact_phone" type="tel" name="delivery_contact_phone" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm" placeholder="e.g. +63 998 765 4321" required>
-                <p id="delivery_phone_country" class="text-xs mt-1 text-gray-500">Type number with country code (example: +63)</p>
+                                <div class="flex gap-2">
+                                    <select id="delivery_country_code" class="border border-gray-300 rounded-lg px-2 py-2 focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm w-28">
+                                        <option value="">Loading...</option>
+                                    </select>
+                                    <input id="delivery_phone_number" type="tel" class="flex-1 border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm" placeholder="998 765 4321" required>
+                                </div>
+                                <p id="delivery_phone_country" class="text-xs mt-1 text-gray-500">Select country code and enter phone number</p>
+                                <input type="hidden" id="delivery_contact_phone" name="delivery_contact_phone">
               </div>
             </div>
           </div>
@@ -455,8 +467,8 @@
 
 
     <!-- Order Details Modal -->
-    <div id="orderModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div id="orderModalContent" class="bg-white rounded-xl shadow-lg max-w-6xl w-full mx-4 my-8 max-h-[90vh] overflow-y-auto"></div>
+    <div id="orderModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div id="orderModalContent" class="w-full max-w-4xl max-h-[90vh] overflow-y-auto"></div>
     </div>
 
     <!-- Chat Widget (Bottom Right) -->
@@ -573,11 +585,16 @@
         }
 
         function openOrderModal(orderId) {
-            fetch(`/user/orders/${orderId}`)
+            fetch(`/user/orders/${orderId}?modal=1`)
                 .then(res => res.text())
                 .then(html => {
                     const content = document.getElementById('orderModalContent');
                     content.innerHTML = html;
+                    document.getElementById('orderModal').classList.remove('hidden');
+                })
+                .catch(() => {
+                    const content = document.getElementById('orderModalContent');
+                    content.innerHTML = '<div class="bg-white rounded-xl p-6 text-center text-red-600"><i class="fas fa-exclamation-circle mr-2"></i>Failed to load order details. Please try again.</div>';
                     document.getElementById('orderModal').classList.remove('hidden');
                 });
         }
@@ -592,6 +609,7 @@
             document.getElementById('chatMinimized').classList.add('hidden');
             chatOpen = true;
             loadMessages();
+            refreshUnreadCount();
         }
 
         function closeChatWidget() {
@@ -613,22 +631,20 @@
 
         function loadMessages() {
             if (!currentChatOrderId) return;
+
+            const container = document.getElementById('messagesContainer');
+            container.innerHTML = '<div class="text-center py-8 text-gray-500"><i class="fas fa-spinner fa-spin mr-2"></i>Loading messages...</div>';
             
-            fetch(`/orders/${currentChatOrderId}/messages`)
+            fetch(`/orders/${currentChatOrderId}/messages?partial=1`)
                 .then(res => res.text())
                 .then(html => {
-                    // Extract just the messages part
-                    const parser = new DOMParser();
-                    const doc = parser.parseFromString(html, 'text/html');
-                    const messagesDiv = doc.getElementById('messagesContainer');
-                    if (messagesDiv) {
-                        document.getElementById('messagesContainer').innerHTML = messagesDiv.innerHTML;
-                        // Scroll to bottom
-                        const container = document.getElementById('messagesContainer');
-                        container.scrollTop = container.scrollHeight;
-                    }
+                    container.innerHTML = html;
+                    container.scrollTop = container.scrollHeight;
+                    refreshUnreadCount();
                 })
-                .catch(err => console.error('Failed to load messages:', err));
+                .catch(() => {
+                    container.innerHTML = '<div class="text-center py-8 text-red-600"><i class="fas fa-exclamation-circle mr-2"></i>Failed to load messages. Please retry.</div>';
+                });
         }
 
         function sendMessage(e) {
@@ -650,11 +666,40 @@
                 input.value = '';
                 loadMessages();
             })
-            .catch(err => console.error('Failed to send message:', err));
+            .catch(() => {
+                const container = document.getElementById('messagesContainer');
+                container.innerHTML = '<div class="text-center py-8 text-red-600"><i class="fas fa-exclamation-circle mr-2"></i>Message failed to send. Try again.</div>';
+            });
+        }
+
+        function refreshUnreadCount() {
+            if (!currentChatOrderId) return;
+
+            fetch(`/orders/${currentChatOrderId}/messages/unread-count`)
+                .then(res => res.json())
+                .then(data => {
+                    const badge = document.getElementById('unreadCount');
+                    const count = Number(data.count || 0);
+
+                    if (!chatOpen && count > 0) {
+                        badge.textContent = count;
+                        badge.classList.remove('hidden');
+                    } else {
+                        badge.classList.add('hidden');
+                    }
+                })
+                .catch(() => {
+                    const badge = document.getElementById('unreadCount');
+                    badge.classList.add('hidden');
+                });
         }
 
         // Auto-refresh messages every 5 seconds
         setInterval(() => {
+            if (currentChatOrderId) {
+                refreshUnreadCount();
+            }
+
             if (chatOpen && currentChatOrderId) {
                 loadMessages();
             }
@@ -737,9 +782,51 @@
         let searchTimeout = null;
         let phoneDialCodeIndex = [];
 
+        const fallbackDialCodes = [
+            { code: '+63', flag: '🇵🇭', name: 'Philippines' },
+            { code: '+1', flag: '🇺🇸', name: 'United States' },
+            { code: '+44', flag: '🇬🇧', name: 'United Kingdom' },
+            { code: '+65', flag: '🇸🇬', name: 'Singapore' },
+            { code: '+60', flag: '🇲🇾', name: 'Malaysia' },
+        ];
+
+        function populateCountryCodeSelect(selectId, preferredCode = '+63') {
+            const select = document.getElementById(selectId);
+            if (!select) return;
+
+            const source = phoneDialCodeIndex.length ? phoneDialCodeIndex : fallbackDialCodes;
+            const unique = source.filter((item, index, arr) => arr.findIndex(x => x.code === item.code) === index);
+
+            select.innerHTML = unique
+                .map(item => `<option value="${item.code}">${item.flag || '🏳️'} ${item.code}</option>`)
+                .join('');
+
+            const hasPreferred = unique.some(item => item.code === preferredCode);
+            select.value = hasPreferred ? preferredCode : unique[0]?.code || '';
+        }
+
+        function combinePhone(countryCodeId, phoneInputId, hiddenInputId) {
+            const codeEl = document.getElementById(countryCodeId);
+            const numberEl = document.getElementById(phoneInputId);
+            const hiddenEl = document.getElementById(hiddenInputId);
+            if (!codeEl || !numberEl || !hiddenEl) return;
+
+            const code = (codeEl.value || '').trim();
+            const number = (numberEl.value || '').trim().replace(/^\+/, '');
+            hiddenEl.value = code && number ? `${code} ${number}` : number;
+        }
+
         async function loadPhoneDialCodes() {
             try {
-                const response = await fetch('https://restcountries.com/v3.1/all?fields=name,idd,flag');
+                const response = await fetch('https://restcountries.com/v3.1/all?fields=name,idd,flag', {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' },
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Failed to load country data: ${response.status}`);
+                }
+
                 const countries = await response.json();
 
                 const dialCodes = [];
@@ -750,24 +837,45 @@
                         ? country.idd.suffixes
                         : [''];
 
-                    suffixes.forEach(suffix => {
-                        const code = `${root}${suffix}`;
-                        if (/^\+\d+$/.test(code)) {
-                            dialCodes.push({
-                                code,
-                                flag: country.flag || '🏳️',
-                                name: country.name?.common || 'Unknown country'
-                            });
-                        }
-                    });
+                    let code = root;
+
+                    if (root === '+1') {
+                        code = '+1';
+                    } else if (!suffixes.includes('')) {
+                        const cleanSuffixes = suffixes
+                            .filter(suffix => /^\d+$/.test(String(suffix)))
+                            .sort((a, b) => String(a).length - String(b).length || Number(a) - Number(b));
+
+                        const pickedSuffix = cleanSuffixes[0] ?? String(suffixes[0] ?? '');
+                        code = `${root}${pickedSuffix}`;
+                    }
+
+                    if (/^\+\d+$/.test(code)) {
+                        dialCodes.push({
+                            code,
+                            flag: country.flag || '🏳️',
+                            name: country.name?.common || 'Unknown country'
+                        });
+                    }
                 });
 
                 phoneDialCodeIndex = dialCodes
-                    .sort((a, b) => b.code.length - a.code.length)
+                    .sort((a, b) => {
+                        const aNum = Number(a.code.replace('+', ''));
+                        const bNum = Number(b.code.replace('+', ''));
+                        return aNum - bNum;
+                    })
                     .filter((item, index, arr) => arr.findIndex(x => x.code === item.code) === index);
             } catch (error) {
-                phoneDialCodeIndex = [];
+                console.error('Country code API failed, using fallback list:', error);
+                phoneDialCodeIndex = fallbackDialCodes;
             }
+
+            populateCountryCodeSelect('pickup_country_code');
+            populateCountryCodeSelect('delivery_country_code');
+
+            combinePhone('pickup_country_code', 'pickup_phone_number', 'pickup_contact_phone');
+            combinePhone('delivery_country_code', 'delivery_phone_number', 'delivery_contact_phone');
         }
 
         function detectCountryByPhone(rawValue) {
@@ -795,7 +903,7 @@
                 input.classList.add('border-green-300');
             } else {
                 hint.className = 'text-xs mt-1 text-gray-500';
-                hint.textContent = 'Type number with country code (example: +63)';
+                hint.textContent = 'Select country code and enter phone number';
                 input.classList.remove('border-green-300');
             }
         }
@@ -1081,16 +1189,31 @@
 
         // Phone country detection (flag + code)
         loadPhoneDialCodes().then(() => {
-            updatePhoneCountryHint('pickup_contact_phone', 'pickup_phone_country');
-            updatePhoneCountryHint('delivery_contact_phone', 'delivery_phone_country');
+            updatePhoneCountryHint('pickup_phone_number', 'pickup_phone_hint');
+            updatePhoneCountryHint('delivery_phone_number', 'delivery_phone_country');
         });
 
-        document.getElementById('pickup_contact_phone')?.addEventListener('input', function() {
-            updatePhoneCountryHint('pickup_contact_phone', 'pickup_phone_country');
+        document.getElementById('pickup_phone_number')?.addEventListener('input', function() {
+            combinePhone('pickup_country_code', 'pickup_phone_number', 'pickup_contact_phone');
+            updatePhoneCountryHint('pickup_phone_number', 'pickup_phone_hint');
         });
 
-        document.getElementById('delivery_contact_phone')?.addEventListener('input', function() {
-            updatePhoneCountryHint('delivery_contact_phone', 'delivery_phone_country');
+        document.getElementById('delivery_phone_number')?.addEventListener('input', function() {
+            combinePhone('delivery_country_code', 'delivery_phone_number', 'delivery_contact_phone');
+            updatePhoneCountryHint('delivery_phone_number', 'delivery_phone_country');
+        });
+
+        document.getElementById('pickup_country_code')?.addEventListener('change', function() {
+            combinePhone('pickup_country_code', 'pickup_phone_number', 'pickup_contact_phone');
+        });
+
+        document.getElementById('delivery_country_code')?.addEventListener('change', function() {
+            combinePhone('delivery_country_code', 'delivery_phone_number', 'delivery_contact_phone');
+        });
+
+        document.getElementById('createOrderForm')?.addEventListener('submit', function() {
+            combinePhone('pickup_country_code', 'pickup_phone_number', 'pickup_contact_phone');
+            combinePhone('delivery_country_code', 'delivery_phone_number', 'delivery_contact_phone');
         });
     </script>
 </body>
