@@ -7,6 +7,14 @@ use Illuminate\Http\Request;
 
 class ProductController extends Controller
 {
+    private const PRODUCT_RULES = [
+        'name' => 'required|string|max:255',
+        'detail' => 'required|string|max:5000',
+        'who' => 'required|string|max:255',
+        'warehouse' => 'required|string|max:255',
+        'courier_name' => 'required|string|max:255',
+    ];
+
     /**
      * Display a listing of the resource.
      */
@@ -30,14 +38,8 @@ class ProductController extends Controller
      */
     public function store(Request $request)
     {
-            $request->validate([
-            'name' => 'required',
-            'detail' => 'required',
-            'who' => 'required',
-            'warehouse' => 'required',
-            'courier_name' => 'required',
-        ]);
-        Product::create($request->all());
+        $validated = $request->validate(self::PRODUCT_RULES);
+        Product::create($validated);
         return redirect()->route('products.index')
                         ->with('success','Product created successfully.');
     }
@@ -63,14 +65,8 @@ class ProductController extends Controller
      */
     public function update(Request $request, Product $product)
     {
-            $request->validate([
-            'name' => 'required',
-            'detail' => 'required',
-            'who' => 'required',
-            'warehouse' => 'required',
-            'courier_name' => 'required',
-        ]);
-        $product->update($request->all());
+        $validated = $request->validate(self::PRODUCT_RULES);
+        $product->update($validated);
         return redirect()->route('products.index')
         ->with('success','Product updated successfully');
     }

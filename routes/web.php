@@ -40,6 +40,9 @@ Route::middleware('auth')->group(function () {
     // Admin Dashboard & Routes
     Route::middleware('admin')->prefix('admin')->group(function () {
         Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
+        Route::get('/orders', [AdminController::class, 'orderIndex'])->name('admin.orders.index');
+        Route::get('/orders/{order}', [AdminController::class, 'orderShow'])->name('admin.orders.show');
+        Route::post('/orders/{order}/status', [AdminController::class, 'orderUpdateStatus'])->name('admin.orders.status.update');
         Route::get('/users', [AdminController::class, 'userIndex'])->name('admin.users.index');
         Route::get('/users/{user}/edit', [AdminController::class, 'userEdit'])->name('admin.users.edit');
         Route::put('/users/{user}', [AdminController::class, 'userUpdate'])->name('admin.users.update');

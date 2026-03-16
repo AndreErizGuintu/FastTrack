@@ -6,7 +6,7 @@
 
         <!-- Stats Grid -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div class="bg-white rounded-lg shadow p-6">
+            <a href="{{ route('products.index') }}" class="bg-white rounded-lg shadow p-6 hover:shadow-md transition block">
                 <div class="flex items-center">
                     <div class="flex-shrink-0 bg-blue-500 rounded-md p-3">
                         <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -18,9 +18,9 @@
                         <p class="text-2xl font-semibold text-gray-900">{{ $totalProducts ?? 0 }}</p>
                     </div>
                 </div>
-            </div>
+            </a>
 
-            <div class="bg-white rounded-lg shadow p-6">
+            <a href="{{ route('admin.users.index') }}" class="bg-white rounded-lg shadow p-6 hover:shadow-md transition block">
                 <div class="flex items-center">
                     <div class="flex-shrink-0 bg-green-500 rounded-md p-3">
                         <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -32,9 +32,9 @@
                         <p class="text-2xl font-semibold text-gray-900">{{ $totalUsers ?? 0 }}</p>
                     </div>
                 </div>
-            </div>
+            </a>
 
-            <div class="bg-white rounded-lg shadow p-6">
+            <a href="{{ route('admin.users.index', ['role' => 'courier']) }}" class="bg-white rounded-lg shadow p-6 hover:shadow-md transition block">
                 <div class="flex items-center">
                     <div class="flex-shrink-0 bg-purple-500 rounded-md p-3">
                         <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -46,7 +46,29 @@
                         <p class="text-2xl font-semibold text-gray-900">{{ $totalCouriers ?? 0 }}</p>
                     </div>
                 </div>
-            </div>
+            </a>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <a href="{{ route('admin.orders.index') }}" class="bg-white rounded-lg shadow p-6 hover:shadow-md transition block">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-500 text-sm">Total Orders</p>
+                        <p class="text-3xl font-bold text-gray-900">{{ $totalOrders ?? 0 }}</p>
+                    </div>
+                    <i class="fas fa-clipboard-list text-4xl text-red-500 opacity-20"></i>
+                </div>
+            </a>
+
+            <a href="{{ route('admin.orders.index', ['status' => 'in_transit']) }}" class="bg-white rounded-lg shadow p-6 hover:shadow-md transition block">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-500 text-sm">Active Orders</p>
+                        <p class="text-3xl font-bold text-gray-900">{{ $activeOrders ?? 0 }}</p>
+                    </div>
+                    <i class="fas fa-truck text-4xl text-blue-500 opacity-20"></i>
+                </div>
+            </a>
         </div>
 
         <!-- Quick Actions -->
@@ -83,12 +105,16 @@
             <h2 class="text-xl font-semibold text-gray-800 mb-4">Proof of Delivery</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="border border-emerald-200 bg-emerald-50 rounded-lg p-4">
-                    <p class="text-xs uppercase font-bold text-emerald-700 mb-1">Delivered with Proof</p>
-                    <p class="text-2xl font-bold text-emerald-800">{{ $deliveredWithProof ?? 0 }}</p>
+                    <a href="{{ route('admin.orders.index', ['status' => 'delivered', 'proof' => 'with']) }}" class="block">
+                        <p class="text-xs uppercase font-bold text-emerald-700 mb-1">Delivered with Proof</p>
+                        <p class="text-2xl font-bold text-emerald-800">{{ $deliveredWithProof ?? 0 }}</p>
+                    </a>
                 </div>
                 <div class="border border-yellow-200 bg-yellow-50 rounded-lg p-4">
-                    <p class="text-xs uppercase font-bold text-yellow-700 mb-1">Delivered without Proof</p>
-                    <p class="text-2xl font-bold text-yellow-800">{{ $deliveredWithoutProof ?? 0 }}</p>
+                    <a href="{{ route('admin.orders.index', ['status' => 'delivered', 'proof' => 'without']) }}" class="block">
+                        <p class="text-xs uppercase font-bold text-yellow-700 mb-1">Delivered without Proof</p>
+                        <p class="text-2xl font-bold text-yellow-800">{{ $deliveredWithoutProof ?? 0 }}</p>
+                    </a>
                 </div>
             </div>
         </div>
@@ -115,6 +141,11 @@
                                 <span class="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-700 uppercase font-semibold">
                                     {{ str_replace('_', ' ', $order->status) }}
                                 </span>
+                            </div>
+                            <div class="mt-2">
+                                <a href="{{ route('admin.orders.show', $order) }}" class="text-xs font-semibold text-red-700 hover:text-red-800">
+                                    View Order Details →
+                                </a>
                             </div>
                         </div>
                     @endforeach

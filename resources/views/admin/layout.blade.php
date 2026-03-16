@@ -47,6 +47,15 @@
                         <span>Manage Users</span>
                     </a>
                 </div>
+
+                <!-- Orders Section -->
+                <div class="mt-6">
+                    <p class="px-4 py-2 text-xs font-semibold text-red-300 uppercase tracking-wider">Orders</p>
+                    <a href="{{ route('admin.orders.index') }}" class="flex items-center px-4 py-3 rounded-lg @if(request()->routeIs('admin.orders.index', 'admin.orders.show')) bg-red-600 @else hover:bg-red-800 @endif transition">
+                        <i class="fas fa-clipboard-list mr-3"></i>
+                        <span>Manage Orders</span>
+                    </a>
+                </div>
             </nav>
 
             <!-- Sidebar Footer -->

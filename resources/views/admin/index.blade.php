@@ -11,7 +11,7 @@
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-gray-500 text-sm">Total Users</p>
-                    <p class="text-3xl font-bold text-gray-900">{{ $users->total() }}</p>
+                    <p class="text-3xl font-bold text-gray-900">{{ $totalUsers ?? 0 }}</p>
                 </div>
                 <i class="fas fa-users text-4xl text-blue-500 opacity-20"></i>
             </div>
@@ -21,7 +21,7 @@
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-gray-500 text-sm">Admins</p>
-                    <p class="text-3xl font-bold text-gray-900">{{ $users->getCollection()->where('role', 'admin')->count() }}</p>
+                    <p class="text-3xl font-bold text-gray-900">{{ $totalAdmins ?? 0 }}</p>
                 </div>
                 <i class="fas fa-crown text-4xl text-yellow-500 opacity-20"></i>
             </div>
@@ -31,11 +31,43 @@
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-gray-500 text-sm">Couriers</p>
-                    <p class="text-3xl font-bold text-gray-900">{{ $users->getCollection()->where('role', 'courier')->count() }}</p>
+                    <p class="text-3xl font-bold text-gray-900">{{ $totalCouriers ?? 0 }}</p>
                 </div>
                 <i class="fas fa-truck text-4xl text-orange-500 opacity-20"></i>
             </div>
         </div>
+    </div>
+
+    <div class="bg-white rounded-lg shadow p-6">
+        <form method="GET" action="{{ route('admin.users.index') }}" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="md:col-span-2">
+                <label class="block text-sm text-gray-600 mb-1">Search Name/Email</label>
+                <input
+                    type="text"
+                    name="search"
+                    value="{{ $search ?? '' }}"
+                    placeholder="Search users..."
+                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                >
+            </div>
+            <div>
+                <label class="block text-sm text-gray-600 mb-1">Role</label>
+                <select name="role" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                    <option value="" @selected(($role ?? '') === '')>All Roles</option>
+                    <option value="admin" @selected(($role ?? '') === 'admin')>Admin</option>
+                    <option value="courier" @selected(($role ?? '') === 'courier')>Courier</option>
+                    <option value="user" @selected(($role ?? '') === 'user')>User</option>
+                </select>
+            </div>
+            <div class="flex items-end gap-2">
+                <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-semibold">
+                    Apply
+                </button>
+                <a href="{{ route('admin.users.index') }}" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 text-sm font-semibold">
+                    Clear
+                </a>
+            </div>
+        </form>
     </div>
 
     <!-- Users Table -->

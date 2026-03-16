@@ -60,6 +60,7 @@ class CourierLocationService
     public static function geocodeAddress(string $address): ?array
     {
         try {
+            // Public Nominatim geocoding endpoint: address -> first matching result
             $response = Http::timeout(5)->get('https://nominatim.openstreetmap.org/search', [
                 'q' => $address,
                 'format' => 'json',
@@ -69,6 +70,7 @@ class CourierLocationService
             if ($response->successful() && $response->json()) {
                 $result = $response->json()[0] ?? null;
                 if ($result) {
+                    // Transform Nominatim strings to float coords used by app/services
                     return [
                         'lat' => (float)$result['lat'],
                         'lng' => (float)$result['lon'],
@@ -139,6 +141,7 @@ class CourierLocationService
             if ($response->successful()) {
                 $data = $response->json();
                 if (isset($data['routes'][0]['distance'])) {
+                    // Transform OSRM route payload -> distance in meters
                     return (float)$data['routes'][0]['distance'];
                 }
             }
@@ -168,7 +171,7 @@ class CourierLocationService
             if ($response->successful()) {
                 $data = $response->json();
                 if (isset($data['routes'][0]['geometry']['coordinates'])) {
-                    // Convert from [lng, lat] to [lat, lng]
+                    // Convert OSRM geometry from [lng, lat] to Leaflet-friendly [lat, lng]
                     return array_map(function ($coord) {
                         return [$coord[1], $coord[0]];
                     }, $data['routes'][0]['geometry']['coordinates']);

@@ -547,6 +547,7 @@
             setTimeout(() => {
                 if (!locationMap) {
                     locationMap = L.map('locationMap').setView([14.5995, 120.9842], 12);
+                    // Public OSM tiles rendered by Leaflet (no API key required)
                     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                         attribution: '© OpenStreetMap contributors',
                         maxZoom: 19
@@ -818,6 +819,7 @@
 
         async function loadPhoneDialCodes() {
             try {
+                // Public RestCountries endpoint used to build dial-code dropdown options
                 const response = await fetch('https://restcountries.com/v3.1/all?fields=name,idd,flag', {
                     method: 'GET',
                     headers: { 'Accept': 'application/json' },
@@ -851,6 +853,7 @@
                     }
 
                     if (/^\+\d+$/.test(code)) {
+                        // Transform country payload -> normalized option object for selects
                         dialCodes.push({
                             code,
                             flag: country.flag || '🏳️',
@@ -921,10 +924,12 @@
 
             searchTimeout = setTimeout(async () => {
                 try {
+                    // Public Nominatim search: query text -> top address matches with coordinates
                     const response = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5&addressdetails=1`);
                     const results = await response.json();
 
                     if (results && results.length > 0) {
+                        // Transform Nominatim results into clickable suggestion rows
                         suggestionsDiv.innerHTML = results.map(result => {
                             const displayName = result.display_name.replace(/'/g, "&#39;");
                             return `
@@ -1119,11 +1124,12 @@
             feeInput.value = '';
 
             try {
-                // Use OSRM directly with coordinates
+                // Public OSRM route call with lng,lat pairs for pickup and dropoff
                 const response = await fetch(`https://router.project-osrm.org/route/v1/driving/${pickupCoords.lng},${pickupCoords.lat};${deliveryCoords.lng},${deliveryCoords.lat}?overview=false`);
                 const data = await response.json();
 
                 if (data.routes && data.routes[0]) {
+                    // Transform OSRM distance meters -> km -> app fee formula
                     const distanceMeters = data.routes[0].distance;
                     const distanceKm = distanceMeters / 1000;
                     const fee = 5.00 + (distanceKm * 0.50);

@@ -46,6 +46,7 @@
         // Ensure map sizes properly
         map.invalidateSize();
         
+        // Public OpenStreetMap tile source for base map rendering
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '© OpenStreetMap contributors',
             maxZoom: 19
@@ -124,10 +125,12 @@
         // Geocode address and add marker
         async function geocodeAndAddMarker(address, icon, color, label, isPickup) {
             try {
+                // Public Nominatim geocoding: address string -> single best lat/lon match
                 const response = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&limit=1`);
                 const data = await response.json();
                 
                 if (data && data.length > 0) {
+                    // Transform Nominatim payload (string lat/lon) into numeric coords for Leaflet marker placement
                     const lat = parseFloat(data[0].lat);
                     const lng = parseFloat(data[0].lon);
                     
